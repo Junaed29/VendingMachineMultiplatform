@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    // Add kotlinx-serialization plugin for JSON serialization
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 kotlin {
@@ -54,6 +56,15 @@ kotlin {
         }
 
         commonMain.dependencies {
+            // Update multiplatform-settings dependencies to latest version
+            implementation("com.russhwolf:multiplatform-settings:1.3.0")
+            implementation("com.russhwolf:multiplatform-settings-serialization:1.3.0")
+            // Update serialization dependency
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+
+            // Add kotlinx-datetime dependency
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)

@@ -338,7 +338,7 @@ class VendingMachineScreen : Screen {
         }
 
         // Show coin technical details (educational section)
-        CoinPhysicalDetails()
+        //CoinPhysicalDetails()
 
         // Show invalid coin message only when needed
         AnimatedVisibility(

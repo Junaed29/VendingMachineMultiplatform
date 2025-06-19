@@ -7,12 +7,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
+import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,10 +33,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import org.junaed.vending_machine.viewmodel.MaintenanceViewModel
 
 /**
  * Maintenance Screen
@@ -46,10 +57,14 @@ class MaintenanceScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
+        // Initialize the ViewModel with persistent storage support
+        val viewModel = remember { MaintenanceViewModel() }
+
         // State variables for UI components
         var password by remember { mutableStateOf("") }
-        var isAuthenticated by remember { mutableStateOf(false) }
         var stockLevel by remember { mutableStateOf("") }
+        var selectedDrink by remember { mutableStateOf("BRAND 1") }
+        var newPrice by remember { mutableStateOf("") }
 
         val navigator = LocalNavigator.current
 
@@ -58,7 +73,10 @@ class MaintenanceScreen : Screen {
                 TopAppBar(
                     title = { Text("Maintenance Mode", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
-                        IconButton(onClick = { navigator?.pop() }) {
+                        IconButton(onClick = {
+                            viewModel.clearAuthentication()
+                            navigator?.pop()
+                        }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
@@ -74,7 +92,7 @@ class MaintenanceScreen : Screen {
                     .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (!isAuthenticated) {
+                if (!viewModel.isAuthenticated) {
                     // SECTION: Authentication
                     Text(
                         "MAINTENANCE ACCESS",
@@ -88,6 +106,8 @@ class MaintenanceScreen : Screen {
                         onValueChange = { password = it },
                         label = { Text("Enter Maintenance Password") },
                         modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true
                     )
 
@@ -95,116 +115,184 @@ class MaintenanceScreen : Screen {
 
                     Button(
                         onClick = {
-                            // TODO: Implement authentication logic
-                            // Check if password is correct and update isAuthenticated
-                            isAuthenticated = true // For demo purposes
+                            if (viewModel.authenticate(password)) {
+                                // Password correct, now authenticated
+                                password = ""
+                            }
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Login")
+                        Text("LOGIN")
                     }
+
+                    // Show error message if authentication failed
+                    viewModel.errorMessage?.let { error ->
+                        Text(
+                            error,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+
                 } else {
-                    // SECTION: Maintenance Controls
-                    Text(
-                        "MAINTENANCE CONTROLS",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        modifier = Modifier.padding(vertical = 16.dp)
-                    )
+                    // SECTION: Maintenance Controls (shown after authentication)
 
-                    // SUBSECTION: Inventory Management
-                    Text(
-                        "Inventory Management",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
+                    // Display last maintenance timestamp if available
+                    if (viewModel.currentSettings.lastMaintenanceDate > 0) {
+                        val timestamp = viewModel.currentSettings.lastMaintenanceDate
+                        val instant = Instant.fromEpochMilliseconds(timestamp)
+                        val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = stockLevel,
-                        onValueChange = { stockLevel = it },
-                        label = { Text("Sparkle Pop Stock Level") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = {
-                            // TODO: Implement stock update logic
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Update Stock")
+                        Text(
+                            "Last Maintenance: ${dateTime.date} ${dateTime.hour}:${dateTime.minute}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
                     }
 
-                    Divider(modifier = Modifier.padding(vertical = 16.dp))
-
-                    // SUBSECTION: Sales Data
-                    Text(
-                        "Sales Data",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // TODO: Implement a sales data display component
-                    Text(
-                        "Total Sales: $120.50",
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-                    Text(
-                        "Total Items Sold: 45",
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-
-                    Divider(modifier = Modifier.padding(vertical = 16.dp))
-
-                    // SUBSECTION: System Maintenance
-                    Text(
-                        "System Maintenance",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            // TODO: Implement error clearing logic
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                    // Stock Management Section
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
                     ) {
-                        Text("Clear Error Logs")
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                "STOCK MANAGEMENT",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Drink selection dropdown
+                            ExposedDropdownMenuBox(
+                                expanded = false,
+                                onExpandedChange = { },
+                            ) {
+                                OutlinedTextField(
+                                    value = selectedDrink,
+                                    onValueChange = { },
+                                    readOnly = true,
+                                    label = { Text("Select Drink") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) },
+                                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                                )
+
+                                ExposedDropdownMenu(
+                                    expanded = false,
+                                    onDismissRequest = { },
+                                ) {
+                                    listOf("BRAND 1", "BRAND 2", "BRAND 3", "BRAND 4", "BRAND 5").forEach { drink ->
+                                        DropdownMenuItem(
+                                            text = { Text(drink) },
+                                            onClick = {
+                                                selectedDrink = drink
+                                                // Update stock level display when drink changes
+                                                stockLevel = viewModel.currentSettings.drinkStockLevels[drink]?.toString() ?: "0"
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Stock level input
+                            OutlinedTextField(
+                                value = stockLevel,
+                                onValueChange = { stockLevel = it },
+                                label = { Text("Stock Level") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Button(
+                                onClick = {
+                                    stockLevel.toIntOrNull()?.let { level ->
+                                        viewModel.updateStockLevel(selectedDrink, level)
+                                    }
+                                },
+                                modifier = Modifier.align(Alignment.End)
+                            ) {
+                                Text("Update Stock")
+                            }
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = {
-                            // TODO: Implement system reset logic
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                    // Price Management Section
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
                     ) {
-                        Text("Reset System")
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                "PRICE MANAGEMENT",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Current price display
+                            val currentPrice = viewModel.currentSettings.priceSettings[selectedDrink]?.toString() ?: "0.00"
+                            Text(
+                                "Current Price: RM $currentPrice",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // New price input
+                            OutlinedTextField(
+                                value = newPrice,
+                                onValueChange = { newPrice = it },
+                                label = { Text("New Price (RM)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Button(
+                                onClick = {
+                                    newPrice.toDoubleOrNull()?.let { price ->
+                                        viewModel.updateDrinkPrice(selectedDrink, price)
+                                        newPrice = ""
+                                    }
+                                },
+                                modifier = Modifier.align(Alignment.End)
+                            ) {
+                                Text("Update Price")
+                            }
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
+                    // Maintenance Service Record Button
                     Button(
                         onClick = {
-                            // TODO: Implement logout logic
-                            isAuthenticated = false
-                            password = ""
+                            viewModel.recordMaintenance()
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp)
                     ) {
-                        Text("Exit Maintenance Mode")
+                        Text("RECORD MAINTENANCE SERVICE")
                     }
                 }
             }
