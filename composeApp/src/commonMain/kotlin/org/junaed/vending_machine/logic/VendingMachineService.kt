@@ -1,7 +1,6 @@
 package org.junaed.vending_machine.logic
 
 import org.junaed.vending_machine.model.Coin
-import kotlin.math.abs
 import kotlin.math.round
 
 /**
@@ -24,26 +23,6 @@ class VendingMachineService {
                 append('0')
             }
             append(fraction)
-        }
-    }
-
-    /**
-     * Validates if the input coin is one of the accepted Malaysian coins
-     */
-    fun validateCoinInput(coinInputText: String): Coin? {
-        val validCoins = CoinRepository.MALAYSIAN_COINS
-
-        // Try to parse as integer (sen)
-        return try {
-            val inputValue = coinInputText.toInt()
-            validCoins.find { it.valueSen == inputValue }
-        } catch (e: NumberFormatException) {
-            // If not an integer, try checking if it's a special format like "RM1"
-            if (coinInputText.equals("RM1", ignoreCase = true)) {
-                validCoins.find { it.valueSen == 100 }
-            } else {
-                null
-            }
         }
     }
 
