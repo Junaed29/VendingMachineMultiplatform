@@ -1,6 +1,7 @@
 package org.junaed.vending_machine.ui.utils
 
-import org.junaed.vending_machine.ui.components.MalaysianCoin
+import org.junaed.vending_machine.ui.components.Coin
+import kotlin.math.abs
 import kotlin.math.round
 
 /**
@@ -28,10 +29,10 @@ class VendingMachineHelper {
         /**
          * Validates if the input coin is one of the accepted Malaysian coins
          * @param coinInputText The string input to validate
-         * @return A MalaysianCoin if valid, null otherwise
+         * @return A Coin if valid, null otherwise
          */
-        fun validateCoinInput(coinInputText: String): MalaysianCoin? {
-            val validCoins = MalaysianCoin.AVAILABLE_COINS
+        fun validateCoinInput(coinInputText: String): Coin? {
+            val validCoins = Coin.MALAYSIAN_COINS
 
             // Try to parse as integer (sen)
             return try {
@@ -48,11 +49,62 @@ class VendingMachineHelper {
         }
 
         /**
+         * Validates a coin based on its physical properties (diameter, thickness, weight)
+         * @param diameter The measured diameter in millimeters
+         * @param thickness The measured thickness in millimeters
+         * @param weight The measured weight in grams
+         * @return A valid Malaysian coin if measurements match, null otherwise
+         */
+        fun validateCoinByPhysicalProperties(
+            diameter: Double,
+            thickness: Double,
+            weight: Double
+        ): Coin? {
+            return Coin.identifyCoin(diameter, thickness, weight)
+        }
+
+        /**
+         * Validates if a coin meets Malaysian specifications
+         * @param coin The coin to validate
+         * @return True if the coin is a valid Malaysian coin, false otherwise
+         */
+        fun isValidMalaysianCoin(coin: Coin): Boolean {
+            return Coin.isValidMalaysianCoin(coin)
+        }
+
+        /**
+         * Get the reason why a coin was rejected
+         * @param coin The coin being evaluated
+         * @return A string describing why the coin was rejected or null if valid
+         */
+        fun getCoinRejectionReason(coin: Coin): String? {
+            if (isValidMalaysianCoin(coin)) return null
+
+            // Find the closest Malaysian coin based on value
+            val closestCoin = Coin.MALAYSIAN_COINS.find { it.valueSen == coin.valueSen }
+                ?: Coin.MALAYSIAN_COINS.minByOrNull { abs(it.valueSen - coin.valueSen) }
+                ?: return "Invalid coin specifications"
+
+            // Check which property is out of tolerance
+            val diameterOff = abs(coin.diameter - closestCoin.diameter) > Coin.DIAMETER_TOLERANCE_MM
+            val thicknessOff = abs(coin.thickness - closestCoin.thickness) > Coin.THICKNESS_TOLERANCE_MM
+            val weightOff = abs(coin.weight - closestCoin.weight) > Coin.WEIGHT_TOLERANCE_G
+
+            return when {
+                diameterOff && thicknessOff && weightOff -> "Coin doesn't match Malaysian specifications"
+                diameterOff -> "Incorrect coin diameter"
+                thicknessOff -> "Incorrect coin thickness"
+                weightOff -> "Incorrect coin weight"
+                else -> "Coin not recognized"
+            }
+        }
+
+        /**
          * Calculate total amount from a list of added coins
          * @param insertedCoins List of coins that have been inserted
          * @return The total amount in Ringgit Malaysia format (e.g., "2.50")
          */
-        fun calculateTotal(insertedCoins: List<MalaysianCoin>): String {
+        fun calculateTotal(insertedCoins: List<Coin>): String {
             val totalSen = insertedCoins.sumOf { it.valueSen }
             val totalRM = totalSen / 100.0
             return formatToTwoDecimalPlaces(totalRM)

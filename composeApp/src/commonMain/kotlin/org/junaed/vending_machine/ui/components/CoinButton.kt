@@ -42,7 +42,7 @@ private fun parseColorFromHex(colorString: String): Color {
 
 @Composable
 fun CoinButton(
-    coin: MalaysianCoin,
+    coin: Coin,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -57,10 +57,14 @@ fun CoinButton(
         }
     }
 
+    // Calculate size based on coin diameter, with some scaling for UI purposes
+    // Typical Malaysian coins are 18-24mm, so scale appropriately for UI
+    val sizeDp = (coin.diameter * 2.0).coerceIn(60.0, 80.0).dp
+
     Card(
         shape = CircleShape,
         modifier = modifier
-            .size(70.dp)
+            .size(sizeDp)
             .scale(scale.value)
             .clickable {
                 // Use the properly scoped coroutine for animation
@@ -84,7 +88,7 @@ fun CoinButton(
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(70.dp)
+            modifier = Modifier.size(sizeDp)
         ) {
             Text(
                 text = coin.displayName,

@@ -1,8 +1,6 @@
 package org.junaed.vending_machine.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
@@ -17,11 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -40,7 +35,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -51,16 +45,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import org.junaed.vending_machine.ui.components.Coin
 import org.junaed.vending_machine.ui.components.CoinButton
 import org.junaed.vending_machine.ui.components.DrinkItem
 import org.junaed.vending_machine.ui.components.DrinkSelectionButton
-import org.junaed.vending_machine.ui.components.MalaysianCoin
 import org.junaed.vending_machine.ui.utils.VendingMachineHelper
 import org.junaed.vending_machine.ui.utils.WindowSize
 import org.junaed.vending_machine.ui.utils.rememberWindowSize
@@ -85,24 +78,24 @@ class VendingMachineScreen : Screen {
 
         // List of VIMTO drinks (with stock status as requested)
         val drinksList = listOf(
-            DrinkItem("BRAND 1", "0.70", true),
-            DrinkItem("BRAND 2", "0.70", true),
+            DrinkItem("BRAND 1", "0.70", false),
+            DrinkItem("BRAND 2", "0.70", false),
             DrinkItem("BRAND 3", "0.70", false),
             DrinkItem("BRAND 4", "0.60", false),
             DrinkItem("BRAND 5", "0.60", false)
         )
 
         // State variables for the UI
-        var coinInput by remember { mutableStateOf("") }
         var totalInserted by remember { mutableStateOf("0.00") }
         var selectedDrink by remember { mutableStateOf<DrinkItem?>(null) }
         var changeAmount by remember { mutableStateOf("0.00") }
         var showInvalidCoinMessage by remember { mutableStateOf(false) }
+        var invalidCoinMessage by remember { mutableStateOf("") }
         var showNoChangeMessage by remember { mutableStateOf(true) } // Always showing as per requirement
         var dispensedDrink by remember { mutableStateOf("") }
 
         // Keep track of inserted coins
-        val insertedCoins = remember { mutableStateListOf<MalaysianCoin>() }
+        val insertedCoins = remember { mutableStateListOf<Coin>() }
 
         // Get navigator reference for handling back navigation
         val navigator = LocalNavigator.current
@@ -177,25 +170,22 @@ class VendingMachineScreen : Screen {
 
                             // Coin insertion section
                             CoinInsertionSection(
-                                coinInput = coinInput,
-                                onCoinInputChange = { coinInput = it },
                                 insertedCoins = insertedCoins,
                                 buttonColor = buttonColor,
                                 showInvalidCoinMessage = showInvalidCoinMessage,
+                                invalidCoinMessage = invalidCoinMessage,
                                 accentColor = accentColor,
-                                onInsertCoin = { validCoin ->
-                                    insertedCoins.add(validCoin)
-                                    totalInserted = VendingMachineHelper.calculateTotal(insertedCoins)
-                                    showInvalidCoinMessage = false
-                                },
-                                onAttemptInsert = {
-                                    val validCoin = VendingMachineHelper.validateCoinInput(coinInput)
-                                    if (validCoin != null) {
-                                        insertedCoins.add(validCoin)
+                                onInsertCoin = { coin ->
+                                    // Validate the coin using its physical properties
+                                    if (VendingMachineHelper.isValidMalaysianCoin(coin)) {
+                                        // Valid Malaysian coin
+                                        insertedCoins.add(coin)
                                         totalInserted = VendingMachineHelper.calculateTotal(insertedCoins)
-                                        coinInput = ""
                                         showInvalidCoinMessage = false
                                     } else {
+                                        // Foreign or invalid coin
+                                        val reason = VendingMachineHelper.getCoinRejectionReason(coin)
+                                        invalidCoinMessage = reason ?: "Invalid coin"
                                         showInvalidCoinMessage = true
                                     }
                                 }
@@ -287,25 +277,22 @@ class VendingMachineScreen : Screen {
 
                         // Coin insertion section
                         CoinInsertionSection(
-                            coinInput = coinInput,
-                            onCoinInputChange = { coinInput = it },
                             insertedCoins = insertedCoins,
                             buttonColor = buttonColor,
                             showInvalidCoinMessage = showInvalidCoinMessage,
+                            invalidCoinMessage = invalidCoinMessage,
                             accentColor = accentColor,
-                            onInsertCoin = { validCoin ->
-                                insertedCoins.add(validCoin)
-                                totalInserted = VendingMachineHelper.calculateTotal(insertedCoins)
-                                showInvalidCoinMessage = false
-                            },
-                            onAttemptInsert = {
-                                val validCoin = VendingMachineHelper.validateCoinInput(coinInput)
-                                if (validCoin != null) {
-                                    insertedCoins.add(validCoin)
+                            onInsertCoin = { coin ->
+                                // Validate the coin using its physical properties
+                                if (VendingMachineHelper.isValidMalaysianCoin(coin)) {
+                                    // Valid Malaysian coin
+                                    insertedCoins.add(coin)
                                     totalInserted = VendingMachineHelper.calculateTotal(insertedCoins)
-                                    coinInput = ""
                                     showInvalidCoinMessage = false
                                 } else {
+                                    // Foreign or invalid coin
+                                    val reason = VendingMachineHelper.getCoinRejectionReason(coin)
+                                    invalidCoinMessage = reason ?: "Invalid coin"
                                     showInvalidCoinMessage = true
                                 }
                             }
@@ -411,14 +398,12 @@ class VendingMachineScreen : Screen {
 
     @Composable
     private fun CoinInsertionSection(
-        coinInput: String,
-        onCoinInputChange: (String) -> Unit,
-        insertedCoins: List<MalaysianCoin>,
+        insertedCoins: List<Coin>,
         buttonColor: Color,
         showInvalidCoinMessage: Boolean,
+        invalidCoinMessage: String,
         accentColor: Color,
-        onInsertCoin: (MalaysianCoin) -> Unit,
-        onAttemptInsert: () -> Unit
+        onInsertCoin: (Coin) -> Unit
     ) {
         Text(
             "INSERT COIN HERE",
@@ -427,14 +412,21 @@ class VendingMachineScreen : Screen {
             color = Color.White
         )
 
-        // Malaysian Coin Buttons
+        // Malaysian Coin Buttons - Regular coin section
+        Text(
+            "Malaysian Coins:",
+            fontSize = 14.sp,
+            color = Color.White,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            MalaysianCoin.AVAILABLE_COINS.forEach { coin ->
+            Coin.MALAYSIAN_COINS.forEach { coin ->
                 CoinButton(
                     coin = coin,
                     onClick = { onInsertCoin(coin) }
@@ -442,31 +434,34 @@ class VendingMachineScreen : Screen {
             }
         }
 
-        // Manual coin input field
-        OutlinedTextField(
-            value = coinInput,
-            onValueChange = onCoinInputChange,
-            placeholder = { Text("Or type coin value (10, 20, 50, 100)", color = Color.Gray) },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            shape = MaterialTheme.shapes.medium,
-            colors = TextFieldDefaults.colors(
-                cursorColor = accentColor,
-                focusedIndicatorColor = accentColor,
-                unfocusedIndicatorColor = Color.Gray,
-            ),
-            trailingIcon = {
-                Button(
-                    onClick = onAttemptInsert,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = buttonColor
-                    ),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text("Insert", color = Color.White)
-                }
-            }
+        // Foreign coin section - For demonstration
+        Text(
+            "Foreign Coins (Will Be Rejected):",
+            fontSize = 14.sp,
+            color = Color.White,
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
         )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            // Add US Quarter and Euro coin as examples
+            CoinButton(
+                coin = Coin.US_QUARTER,
+                onClick = { onInsertCoin(Coin.US_QUARTER) }
+            )
+
+            CoinButton(
+                coin = Coin.EURO_1,
+                onClick = { onInsertCoin(Coin.EURO_1) }
+            )
+        }
+
+        // Show coin technical details (educational section)
+        CoinPhysicalDetails(accentColor)
 
         // Show invalid coin message only when needed
         AnimatedVisibility(
@@ -474,11 +469,66 @@ class VendingMachineScreen : Screen {
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            Text(
-                "COINS NOT VALID - USE 10, 20, 50, 100 (SEN)",
-                color = accentColor,
-                fontWeight = FontWeight.Bold
-            )
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.Red.copy(alpha = 0.2f)
+                ),
+                border = BorderStroke(1.dp, accentColor)
+            ) {
+                Text(
+                    "COIN NOT VALID - $invalidCoinMessage",
+                    color = accentColor,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun CoinPhysicalDetails(accentColor: Color) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Black.copy(alpha = 0.7f)
+            ),
+            border = BorderStroke(1.dp, accentColor)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = "VIMTO Machine validates coins by physical properties:",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = "• Diameter (mm): Must match Malaysian coins ±${Coin.DIAMETER_TOLERANCE_MM}mm",
+                    fontSize = 10.sp,
+                    color = Color.LightGray
+                )
+                Text(
+                    text = "• Thickness (mm): Must match Malaysian coins ±${Coin.THICKNESS_TOLERANCE_MM}mm",
+                    fontSize = 10.sp,
+                    color = Color.LightGray
+                )
+                Text(
+                    text = "• Weight (g): Must match Malaysian coins ±${Coin.WEIGHT_TOLERANCE_G}g",
+                    fontSize = 10.sp,
+                    color = Color.LightGray
+                )
+            }
         }
     }
 
