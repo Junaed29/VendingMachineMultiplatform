@@ -1,9 +1,7 @@
 package org.junaed.vending_machine.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,21 +18,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.junaed.vending_machine.model.DrinkItem
 
 @Composable
 fun DrinkSelectionButton(
-    brandName: String,
-    price: String,
-    inStock: Boolean,
+    drinkItem: DrinkItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val backgroundColor = if (inStock) Color(0xFF1A2232) else Color(0xFF0A1622)
-    val buttonColor = if (inStock) Color(0xFFF39C12) else Color.Gray
-    val statusText = if (inStock) "" else "NOT IN STOCK"
+    val backgroundColor = if (drinkItem.inStock) Color(0xFF1A2232) else Color(0xFF0A1622)
+    val buttonColor = if (drinkItem.inStock) Color(0xFFF39C12) else Color.Gray
+    val statusText = if (drinkItem.inStock) "" else "NOT IN STOCK"
 
     Card(
         modifier = modifier
@@ -57,7 +53,7 @@ fun DrinkSelectionButton(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = brandName,
+                    text = drinkItem.name,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     fontSize = 16.sp
@@ -67,12 +63,12 @@ fun DrinkSelectionButton(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = price,
+                        text = drinkItem.price,
                         color = Color(0xFFE74C3C),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
-                    if (!inStock) {
+                    if (!drinkItem.inStock) {
                         Text(
                             text = statusText,
                             color = Color.Red,
@@ -85,7 +81,7 @@ fun DrinkSelectionButton(
 
             Button(
                 onClick = onClick,
-                enabled = inStock,
+                enabled = drinkItem.inStock,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = buttonColor,
                     disabledContainerColor = Color.DarkGray
@@ -94,7 +90,7 @@ fun DrinkSelectionButton(
             ) {
                 Text(
                     text = "PRESS TO SELECT",
-                    color = if (inStock) Color.White else Color.LightGray,
+                    color = if (drinkItem.inStock) Color.White else Color.LightGray,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp
                 )

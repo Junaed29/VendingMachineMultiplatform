@@ -24,25 +24,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import org.junaed.vending_machine.model.Coin
+import org.junaed.vending_machine.ui.theme.parseColorFromHex
 
-// Adding a KMP-compatible hex color parsing function
-private fun parseColorFromHex(colorString: String): Color {
-    val hexColor = colorString.removePrefix("#")
-    return try {
-        Color(
-            red = hexColor.substring(0, 2).toInt(16) / 255f,
-            green = hexColor.substring(2, 4).toInt(16) / 255f,
-            blue = hexColor.substring(4, 6).toInt(16) / 255f,
-            alpha = if (hexColor.length >= 8) hexColor.substring(6, 8).toInt(16) / 255f else 1f
-        )
-    } catch (e: Exception) {
-        Color.Gray // Fallback color
-    }
-}
-
+/**
+ * UI component that displays a coin button in the vending machine interface
+ */
 @Composable
 fun CoinButton(
     coin: Coin,
+    colorHex: String, // UI-specific property
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -50,15 +41,12 @@ fun CoinButton(
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(coin) {
-        // This is already within a coroutine scope provided by LaunchedEffect
         launch {
-            // Reset scale to ensure animation plays correctly on recomposition
             scale.snapTo(1f)
         }
     }
 
-    // Calculate size based on coin diameter, with some scaling for UI purposes
-    // Typical Malaysian coins are 18-24mm, so scale appropriately for UI
+    // Calculate size based on coin diameter, with scaling for UI purposes
     val sizeDp = (coin.diameter * 2.0).coerceIn(60.0, 80.0).dp
 
     Card(
@@ -67,7 +55,6 @@ fun CoinButton(
             .size(sizeDp)
             .scale(scale.value)
             .clickable {
-                // Use the properly scoped coroutine for animation
                 coroutineScope.launch {
                     scale.animateTo(
                         targetValue = 0.8f,
@@ -82,7 +69,7 @@ fun CoinButton(
             },
         border = BorderStroke(2.dp, Color.Black),
         colors = CardDefaults.cardColors(
-            containerColor = parseColorFromHex(coin.colorHex)
+            containerColor = parseColorFromHex(colorHex)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
