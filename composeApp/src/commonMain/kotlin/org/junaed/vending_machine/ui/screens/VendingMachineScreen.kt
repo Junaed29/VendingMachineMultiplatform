@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -58,37 +59,37 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import org.junaed.vending_machine.ui.components.CoinButton
 import org.junaed.vending_machine.ui.components.DrinkItem
+import org.junaed.vending_machine.ui.components.DrinkSelectionButton
 import org.junaed.vending_machine.ui.components.MalaysianCoin
 import org.junaed.vending_machine.ui.utils.VendingMachineHelper
+import org.junaed.vending_machine.ui.utils.WindowSize
+import org.junaed.vending_machine.ui.utils.rememberWindowSize
 
 /**
- * Vending Machine Screen
- * This screen displays the vending machine interface where users can:
+ * VIMTO Soft Drinks Dispenser Screen
+ * This screen displays the vending machine interface modeled after a VIMTO vending machine where users can:
  * - Insert Malaysian coins (10 sen, 20 sen, 50 sen, RM1)
- * - Select drinks
+ * - Select drinks (with stock status indication)
  * - Collect change and purchased items
  */
 class VendingMachineScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        // Define vending machine colors
-        val machineBackgroundColor = Color(0xFF2E3B4E) // Dark blue-gray for machine body
-        val machinePanelColor = Color(0xFF1A2232) // Darker blue for control panel
-        val accentColor = Color(0xFFE74C3C) // Bright red for accents
-        val buttonColor = Color(0xFFF39C12) // Orange for buttons
+        // Define vending machine colors based on VIMTO theme
+        val machineBackgroundColor = Color(0xFF321633) // Deep purple for VIMTO theme
+        val machinePanelColor = Color(0xFF1D0E1E) // Darker purple for panels
+        val accentColor = Color(0xFFE63B8C) // VIMTO pink for accents
+        val buttonColor = Color(0xFF5992A5) // Blue for buttons
         val displayColor = Color(0xFF2ECC71) // Green for display text
 
-        // List of available drinks
+        // List of VIMTO drinks (with stock status as requested)
         val drinksList = listOf(
-            DrinkItem("Sparkle Pop", "1.50"),
-            DrinkItem("Fizz Cola", "1.25"),
-            DrinkItem("Citrus Splash", "1.75"),
-            DrinkItem("Aqua Pure", "1.00"),
-            DrinkItem("Berry Blast", "1.50"),
-            DrinkItem("Tropical Twist", "1.25"),
-            DrinkItem("Energy Surge", "1.75"),
-            DrinkItem("Iced Tea", "1.00")
+            DrinkItem("BRAND 1", "0.70", true),
+            DrinkItem("BRAND 2", "0.70", true),
+            DrinkItem("BRAND 3", "0.70", false),
+            DrinkItem("BRAND 4", "0.60", false),
+            DrinkItem("BRAND 5", "0.60", false)
         )
 
         // State variables for the UI
@@ -97,7 +98,7 @@ class VendingMachineScreen : Screen {
         var selectedDrink by remember { mutableStateOf<DrinkItem?>(null) }
         var changeAmount by remember { mutableStateOf("0.00") }
         var showInvalidCoinMessage by remember { mutableStateOf(false) }
-        var showNoChangeMessage by remember { mutableStateOf(false) }
+        var showNoChangeMessage by remember { mutableStateOf(true) } // Always showing as per requirement
         var dispensedDrink by remember { mutableStateOf("") }
 
         // Keep track of inserted coins
@@ -106,12 +107,16 @@ class VendingMachineScreen : Screen {
         // Get navigator reference for handling back navigation
         val navigator = LocalNavigator.current
 
+        // Determine if we're on mobile or desktop
+        val windowSize = rememberWindowSize()
+        val isDesktop = windowSize == WindowSize.EXPANDED
+
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
                         Text(
-                            "Vending Machine",
+                            "VIMTO Soft Drinks Dispenser",
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
@@ -146,96 +151,44 @@ class VendingMachineScreen : Screen {
                         )
                     )
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(innerPadding)
-                        .padding(horizontal = 16.dp)
-                ) {
-                    // SECTION: Machine Panel Header - styled like a vending machine display
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = machinePanelColor
-                        ),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = 6.dp
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                "MALAYSIAN VENDING",
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 22.sp,
-                                color = displayColor
-                            )
-                            Text(
-                                "INSERT COINS • SELECT DRINK • ENJOY!",
-                                fontSize = 12.sp,
-                                color = Color.White
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // SECTION: Malaysian Coin Selection
-                    Text(
-                        "INSERT COIN HERE",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = Color.White
-                    )
-
-                    // Malaysian Coin Buttons
+                // Desktop layout vs Mobile layout
+                if (isDesktop) {
+                    // Desktop Layout - Side by side panels
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        MalaysianCoin.AVAILABLE_COINS.forEach { coin ->
-                            CoinButton(
-                                coin = coin,
-                                onClick = {
-                                    // Add coin to list of inserted coins
-                                    insertedCoins.add(coin)
-                                    // Update total inserted amount
+                        // Left panel: Coin insertion and machine info
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            // Machine header and coin insertion
+                            VimtoMachineHeader(
+                                displayColor = displayColor,
+                                machinePanelColor = machinePanelColor
+                            )
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Coin insertion section
+                            CoinInsertionSection(
+                                coinInput = coinInput,
+                                onCoinInputChange = { coinInput = it },
+                                insertedCoins = insertedCoins,
+                                buttonColor = buttonColor,
+                                showInvalidCoinMessage = showInvalidCoinMessage,
+                                accentColor = accentColor,
+                                onInsertCoin = { validCoin ->
+                                    insertedCoins.add(validCoin)
                                     totalInserted = VendingMachineHelper.calculateTotal(insertedCoins)
                                     showInvalidCoinMessage = false
-                                }
-                            )
-                        }
-                    }
-
-                    // Manual coin input field (still available as alternative)
-                    OutlinedTextField(
-                        value = coinInput,
-                        onValueChange = { input ->
-                            coinInput = input
-                        },
-                        placeholder = { Text("Or type coin value (10, 20, 50, 100)", color = Color.Gray) },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = TextFieldDefaults.colors(
-                           // textColor = Color.White,
-                            cursorColor = displayColor,
-                            focusedIndicatorColor = displayColor,
-                            unfocusedIndicatorColor = Color.Gray,
-                           // backgroundColor = Color.Transparent
-                        ),
-                        trailingIcon = {
-                            Button(
-                                onClick = {
+                                },
+                                onAttemptInsert = {
                                     val validCoin = VendingMachineHelper.validateCoinInput(coinInput)
                                     if (validCoin != null) {
                                         insertedCoins.add(validCoin)
@@ -245,266 +198,463 @@ class VendingMachineScreen : Screen {
                                     } else {
                                         showInvalidCoinMessage = true
                                     }
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = buttonColor
-                                ),
-                                shape = MaterialTheme.shapes.small
-                            ) {
-                                Text("Insert", color = Color.White)
-                            }
-                        }
-                    )
+                                }
+                            )
 
-                    // Show invalid coin message only when needed
-                    AnimatedVisibility(
-                        visible = showInvalidCoinMessage,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        Text(
-                            "COINS NOT VALID - USE 10, 20, 50, 100 (SEN)",
-                            color = accentColor,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                            Spacer(modifier = Modifier.height(24.dp))
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                            // Total money display
+                            MoneyDisplaySection(
+                                totalInserted = totalInserted,
+                                displayColor = displayColor
+                            )
 
-                    // SECTION: Total Money Display
-                    Text(
-                        "TOTAL MONEY INSERTED",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = Color.White
-                    )
-                    OutlinedTextField(
-                        value = "RM ${totalInserted}",
-                        onValueChange = {},
-                        readOnly = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = TextFieldDefaults.colors(
-                            disabledTextColor = displayColor,
-                            focusedIndicatorColor = displayColor,
-                            unfocusedIndicatorColor = displayColor,
-                            disabledIndicatorColor = displayColor,
+                            Spacer(modifier = Modifier.height(24.dp))
 
-//                            textColor = displayColor,
-//                            disabledTextColor = displayColor,
-//                            focusedIndicatorColor = displayColor,
-//                            unfocusedIndicatorColor = displayColor,
-//                            disabledIndicatorColor = displayColor,
-//                            backgroundColor = Color.Black.copy(alpha = 0.7f)
-                        ),
-                        textStyle = MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // SECTION: Drink Selection
-                    Text(
-                        "SELECT DRINKS BRAND BELOW",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Display drinks in a vending machine style
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Black.copy(alpha = 0.5f)
-                        ),
-                        border = BorderStroke(2.dp, Color.DarkGray),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            drinksList.forEach { drink ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                        .border(
-                                            width = 1.dp,
-                                            color = Color.DarkGray,
-                                            shape = RoundedCornerShape(4.dp)
-                                        )
-                                        .background(Color(0xFF0A1622), RoundedCornerShape(4.dp))
-                                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(
-                                            drink.name,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color.White
-                                        )
-                                        Text(
-                                            "RM ${drink.price}",
-                                            color = accentColor,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    Button(
-                                        onClick = {
-                                            // Implement drink selection logic
-                                            if (VendingMachineHelper.hasEnoughMoney(totalInserted, drink.price)) {
-                                                // Calculate change
-                                                changeAmount = VendingMachineHelper.calculateChange(
-                                                    totalInserted,
-                                                    drink.price
-                                                )
-                                                // Set selected drink
-                                                selectedDrink = drink
-                                                dispensedDrink = drink.name
-                                                // Reset inserted coins after purchase
-                                                totalInserted = "0.00"
-                                                insertedCoins.clear()
-                                                showNoChangeMessage = false
-                                            } else {
-                                                showNoChangeMessage = true
-                                            }
-                                        },
-                                        shape = MaterialTheme.shapes.medium,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = buttonColor
-                                        )
-                                    ) {
-                                        Text(
-                                            "SELECT",
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
-                                        )
+                            // Return cash button
+                            ReturnCashButton(
+                                accentColor = accentColor,
+                                onReturnCash = {
+                                    if (insertedCoins.isNotEmpty()) {
+                                        changeAmount = totalInserted
+                                        totalInserted = "0.00"
+                                        insertedCoins.clear()
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
+                        // Right panel: Drink selection and collection
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            // Drink selection section
+                            DrinkSelectionSection(
+                                drinksList = drinksList,
+                                totalInserted = totalInserted,
+                                machinePanelColor = machinePanelColor,
+                                onSelectDrink = { drink ->
+                                    if (VendingMachineHelper.hasEnoughMoney(totalInserted, drink.price)) {
+                                        changeAmount = VendingMachineHelper.calculateChange(
+                                            totalInserted,
+                                            drink.price
+                                        )
+                                        selectedDrink = drink
+                                        dispensedDrink = drink.name
+                                        totalInserted = "0.00"
+                                        insertedCoins.clear()
+                                    }
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // No change message
+                            NoChangeSection(showNoChangeMessage = showNoChangeMessage, accentColor = accentColor)
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Collection slots
+                            CollectionSlotsSection(
+                                changeAmount = changeAmount,
+                                dispensedDrink = dispensedDrink,
+                                displayColor = displayColor
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Show "no change" message only when needed
-                    AnimatedVisibility(
-                        visible = showNoChangeMessage,
-                        enter = fadeIn(
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessLow
-                            )
-                        ),
-                        exit = fadeOut()
+                } else {
+                    // Mobile Layout - Stacked panels
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(innerPadding)
+                            .padding(horizontal = 16.dp)
                     ) {
-                        Text(
-                            "INSUFFICIENT FUNDS - PLEASE INSERT MORE COINS",
-                            color = accentColor,
-                            fontWeight = FontWeight.Bold
+                        // Machine header
+                        VimtoMachineHeader(
+                            displayColor = displayColor,
+                            machinePanelColor = machinePanelColor
                         )
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    // SECTION: Cash Return
-                    Text(
-                        "PRESS HERE TO RETURN CASH AND TERMINATE",
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        color = Color.White,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Button(
-                        onClick = {
-                            // Return all inserted cash
-                            if (insertedCoins.isNotEmpty()) {
-                                changeAmount = totalInserted
-                                totalInserted = "0.00"
-                                insertedCoins.clear()
+                        // Coin insertion section
+                        CoinInsertionSection(
+                            coinInput = coinInput,
+                            onCoinInputChange = { coinInput = it },
+                            insertedCoins = insertedCoins,
+                            buttonColor = buttonColor,
+                            showInvalidCoinMessage = showInvalidCoinMessage,
+                            accentColor = accentColor,
+                            onInsertCoin = { validCoin ->
+                                insertedCoins.add(validCoin)
+                                totalInserted = VendingMachineHelper.calculateTotal(insertedCoins)
+                                showInvalidCoinMessage = false
+                            },
+                            onAttemptInsert = {
+                                val validCoin = VendingMachineHelper.validateCoinInput(coinInput)
+                                if (validCoin != null) {
+                                    insertedCoins.add(validCoin)
+                                    totalInserted = VendingMachineHelper.calculateTotal(insertedCoins)
+                                    coinInput = ""
+                                    showInvalidCoinMessage = false
+                                } else {
+                                    showInvalidCoinMessage = true
+                                }
                             }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = accentColor),
-                        shape = MaterialTheme.shapes.medium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        Text("RETURN CASH", color = Color.White, fontWeight = FontWeight.Bold)
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Total money display
+                        MoneyDisplaySection(
+                            totalInserted = totalInserted,
+                            displayColor = displayColor
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Drink selection section
+                        DrinkSelectionSection(
+                            drinksList = drinksList,
+                            totalInserted = totalInserted,
+                            machinePanelColor = machinePanelColor,
+                            onSelectDrink = { drink ->
+                                if (VendingMachineHelper.hasEnoughMoney(totalInserted, drink.price)) {
+                                    changeAmount = VendingMachineHelper.calculateChange(
+                                        totalInserted,
+                                        drink.price
+                                    )
+                                    selectedDrink = drink
+                                    dispensedDrink = drink.name
+                                    totalInserted = "0.00"
+                                    insertedCoins.clear()
+                                }
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // No change message
+                        NoChangeSection(showNoChangeMessage = showNoChangeMessage, accentColor = accentColor)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Return cash button
+                        ReturnCashButton(
+                            accentColor = accentColor,
+                            onReturnCash = {
+                                if (insertedCoins.isNotEmpty()) {
+                                    changeAmount = totalInserted
+                                    totalInserted = "0.00"
+                                    insertedCoins.clear()
+                                }
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Collection slots
+                        CollectionSlotsSection(
+                            changeAmount = changeAmount,
+                            dispensedDrink = dispensedDrink,
+                            displayColor = displayColor
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // SECTION: Output Slots - Styled to look like actual vending machine slots
-                    Text(
-                        "COLLECT CHANGE/RETURNED CASH HERE",
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-
-                    OutlinedTextField(
-                        value = if (changeAmount == "0.00") "Empty" else "RM $changeAmount",
-                        onValueChange = {},
-                        readOnly = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.Black, RoundedCornerShape(4.dp))
-                            .border(2.dp, Color.DarkGray, RoundedCornerShape(4.dp)),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = TextFieldDefaults.colors(
-                          //  textColor = displayColor,
-                            disabledTextColor = displayColor,
-                            focusedIndicatorColor = Color.DarkGray,
-                            unfocusedIndicatorColor = Color.DarkGray,
-                          //  backgroundColor = Color.Black
-                        ),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        "COLLECT CAN HERE",
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-
-                    OutlinedTextField(
-                        value = if (dispensedDrink.isEmpty()) "Empty" else dispensedDrink,
-                        onValueChange = {},
-                        readOnly = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.Black, RoundedCornerShape(4.dp))
-                            .border(2.dp, Color.DarkGray, RoundedCornerShape(4.dp)),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = TextFieldDefaults.colors(
-                         //   textColor = displayColor,
-                            disabledTextColor = displayColor,
-                            focusedIndicatorColor = Color.DarkGray,
-                            unfocusedIndicatorColor = Color.DarkGray,
-                        //    backgroundColor = Color.Black
-                        ),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                    )
-
-                    // Add some bottom padding
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
+            }
+        }
+    }
+
+    @Composable
+    private fun VimtoMachineHeader(displayColor: Color, machinePanelColor: Color) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = machinePanelColor
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 6.dp
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "VIMTO SOFT DRINKS",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 22.sp,
+                    color = displayColor
+                )
+                Text(
+                    "INSERT COINS • SELECT DRINK • ENJOY!",
+                    fontSize = 12.sp,
+                    color = Color.White
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun CoinInsertionSection(
+        coinInput: String,
+        onCoinInputChange: (String) -> Unit,
+        insertedCoins: List<MalaysianCoin>,
+        buttonColor: Color,
+        showInvalidCoinMessage: Boolean,
+        accentColor: Color,
+        onInsertCoin: (MalaysianCoin) -> Unit,
+        onAttemptInsert: () -> Unit
+    ) {
+        Text(
+            "INSERT COIN HERE",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            color = Color.White
+        )
+
+        // Malaysian Coin Buttons
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            MalaysianCoin.AVAILABLE_COINS.forEach { coin ->
+                CoinButton(
+                    coin = coin,
+                    onClick = { onInsertCoin(coin) }
+                )
+            }
+        }
+
+        // Manual coin input field
+        OutlinedTextField(
+            value = coinInput,
+            onValueChange = onCoinInputChange,
+            placeholder = { Text("Or type coin value (10, 20, 50, 100)", color = Color.Gray) },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            shape = MaterialTheme.shapes.medium,
+            colors = TextFieldDefaults.colors(
+                cursorColor = accentColor,
+                focusedIndicatorColor = accentColor,
+                unfocusedIndicatorColor = Color.Gray,
+            ),
+            trailingIcon = {
+                Button(
+                    onClick = onAttemptInsert,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = buttonColor
+                    ),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text("Insert", color = Color.White)
+                }
+            }
+        )
+
+        // Show invalid coin message only when needed
+        AnimatedVisibility(
+            visible = showInvalidCoinMessage,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Text(
+                "COINS NOT VALID - USE 10, 20, 50, 100 (SEN)",
+                color = accentColor,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+
+    @Composable
+    private fun MoneyDisplaySection(totalInserted: String, displayColor: Color) {
+        Text(
+            "TOTAL MONEY INSERTED",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            color = Color.White
+        )
+        OutlinedTextField(
+            value = "RM ${totalInserted}",
+            onValueChange = {},
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+            colors = TextFieldDefaults.colors(
+                disabledTextColor = displayColor,
+                focusedIndicatorColor = displayColor,
+                unfocusedIndicatorColor = displayColor,
+                disabledIndicatorColor = displayColor,
+            ),
+            textStyle = MaterialTheme.typography.headlineSmall.copy(
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        )
+    }
+
+    @Composable
+    private fun DrinkSelectionSection(
+        drinksList: List<DrinkItem>,
+        totalInserted: String,
+        machinePanelColor: Color,
+        onSelectDrink: (DrinkItem) -> Unit
+    ) {
+        Text(
+            "SELECT DRINKS BRAND BELOW",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            color = Color.White
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Display drinks in a vending machine style
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = machinePanelColor.copy(alpha = 0.8f)
+            ),
+            border = BorderStroke(2.dp, Color.DarkGray),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(8.dp)
+            ) {
+                drinksList.forEach { drink ->
+                    DrinkSelectionButton(
+                        brandName = drink.name,
+                        price = drink.price,
+                        inStock = drink.inStock,
+                        onClick = { onSelectDrink(drink) }
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun NoChangeSection(showNoChangeMessage: Boolean, accentColor: Color) {
+        if (showNoChangeMessage) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.Black),
+                border = BorderStroke(1.dp, accentColor)
+            ) {
+                Text(
+                    text = "NO CHANGE AVAILABLE",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    color = accentColor,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun ReturnCashButton(accentColor: Color, onReturnCash: () -> Unit) {
+        Text(
+            "PRESS HERE TO RETURN CASH AND TERMINATE TRANSACTION HERE",
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = Color.White,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Button(
+            onClick = onReturnCash,
+            colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            Text("RETURN CASH", color = Color.White, fontWeight = FontWeight.Bold)
+        }
+    }
+
+    @Composable
+    private fun CollectionSlotsSection(changeAmount: String, dispensedDrink: String, displayColor: Color) {
+        // Change collection slot
+        Text(
+            "COLLECT CHANGE / RETURNED CASH HERE",
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+
+        OutlinedTextField(
+            value = if (changeAmount == "0.00") "Empty" else "RM $changeAmount",
+            onValueChange = {},
+            readOnly = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.Black, RoundedCornerShape(4.dp))
+                .border(2.dp, Color.DarkGray, RoundedCornerShape(4.dp)),
+            shape = MaterialTheme.shapes.medium,
+            colors = TextFieldDefaults.colors(
+                disabledTextColor = displayColor,
+                focusedIndicatorColor = Color.DarkGray,
+                unfocusedIndicatorColor = Color.DarkGray,
+            ),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Product collection slot - hexagon-shaped for VIMTO style
+        Text(
+            "COLLECT CAN HERE",
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+
+        // Created a simple slot with a diamond-like shape as requested
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp)
+                .background(Color.Black),
+            shape = RoundedCornerShape(10.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.Black),
+            border = BorderStroke(2.dp, Color.DarkGray)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Text(
+                    text = if (dispensedDrink.isEmpty()) "Empty" else dispensedDrink,
+                    color = displayColor,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    fontSize = 18.sp
+                )
             }
         }
     }
