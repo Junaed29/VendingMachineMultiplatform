@@ -33,6 +33,9 @@ class MaintenanceViewModel {
     var currentSettings by mutableStateOf(loadSettings())
         private set
 
+    // Cash management
+    private var totalCash = 100.0 // Default starting cash value
+
     /**
      * Load settings from persistent storage using the serialization extension
      */
@@ -94,6 +97,26 @@ class MaintenanceViewModel {
         )
 
         saveSettings()
+    }
+
+    /**
+     * Get total cash in the machine
+     * Returns the current cash amount stored in the machine
+     */
+    fun getTotalCash(): Double {
+        // In a real implementation, this would retrieve the actual cash value
+        // from a persistent storage or hardware interface
+        return totalCash
+    }
+
+    /**
+     * Collect all cash from the machine
+     * Returns the amount collected and resets the machine's cash to zero
+     */
+    fun collectCash(): Double {
+        val collectedAmount = totalCash
+        totalCash = 0.0
+        return collectedAmount
     }
 
     /**
