@@ -1,10 +1,17 @@
 package org.junaed.vending_machine.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -13,10 +20,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import org.junaed.vending_machine.ui.theme.VendingMachineColors
 
 /**
  * Main Menu Screen for the Vending Machine app
@@ -29,8 +41,16 @@ class MainMenuScreen: Screen {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Vending Machine App", fontWeight = FontWeight.Bold) },
-                    colors = TopAppBarDefaults.topAppBarColors()
+                    title = {
+                        Text(
+                            "VIMTO Vending Machine",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = VendingMachineColors.MachinePanelColor
+                    )
                 )
             },
             modifier = Modifier.fillMaxSize()
@@ -38,40 +58,97 @@ class MainMenuScreen: Screen {
             // Get the navigator instance to handle navigation between screens
             val navigator = LocalNavigator.current
 
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
-                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                VendingMachineColors.MachineBackground,
+                                VendingMachineColors.MachineBackground.copy(alpha = 0.8f)
+                            )
+                        )
+                    )
             ) {
-                // Button to navigate to the Vending Machine screen
-                Button(onClick = {
-                    // TODO: Add any preparation logic before navigation if needed
-                    navigator?.push(VendingMachineScreen())
-                }) {
-                    Text("Vending Machine")
-                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(horizontal = 24.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // App logo or title
+                    Text(
+                        "VIMTO",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 36.sp,
+                        color = VendingMachineColors.AccentColor,
+                        textAlign = TextAlign.Center
+                    )
 
-                // Button to navigate to the Maintenance screen
-                Button(onClick = {
-                    // TODO: Implement navigation to Maintenance screen
-                    navigator?.push(MaintenanceScreen())
-                }) {
-                    Text("Maintenance")
-                }
+                    Text(
+                        "Soft Drinks Dispenser",
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 18.sp,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 32.dp)
+                    )
 
-                // Button to navigate to the Simulator screen
-                Button(onClick = {
-                    // TODO: Implement navigation to Simulator screen
-                    navigator?.push(SimulatorScreen())
-                }) {
-                    Text("Simulator")
-                }
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                // TODO: Add any additional UI elements or information as needed
-                // For example: app version, copyright information, etc.
+                    // Button to navigate to the Vending Machine screen
+                    MainMenuButton(
+                        text = "Vending Machine",
+                        onClick = { navigator?.push(VendingMachineScreen()) }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Button to navigate to the Maintenance screen
+                    MainMenuButton(
+                        text = "Maintenance",
+                        onClick = { navigator?.push(MaintenanceScreen()) }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Button to navigate to the Simulator screen
+                    MainMenuButton(
+                        text = "Simulator",
+                        onClick = { navigator?.push(SimulatorScreen()) }
+                    )
+
+                    Spacer(modifier = Modifier.height(48.dp))
+
+                    // Copyright information
+                    Text(
+                        "© 2025 VIMTO Soft Drinks Ltd",
+                        fontSize = 12.sp,
+                        color = Color.White.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
+        }
+    }
+
+    @Composable
+    private fun MainMenuButton(text: String, onClick: () -> Unit) {
+        Button(
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = VendingMachineColors.ButtonColor
+            )
+        ) {
+            Text(
+                text,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
         }
     }
 }
