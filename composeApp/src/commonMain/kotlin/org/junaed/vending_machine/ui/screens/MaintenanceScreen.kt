@@ -256,6 +256,7 @@ class MaintenanceScreen : Screen {
                         Text(
                             "Press the button to count the coins of the selected denomination",
                             fontSize = 14.sp,
+                            color = Color.White, // Added explicit white color for better contrast
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
@@ -270,7 +271,9 @@ class MaintenanceScreen : Screen {
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Total Coins: $totalCoins", fontWeight = FontWeight.Bold)
+                        Text("Total Coins: $totalCoins",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White) // Added explicit white color
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -280,6 +283,7 @@ class MaintenanceScreen : Screen {
                         Text(
                             "Press the button to count the cans of the selected drink",
                             fontSize = 14.sp,
+                            color = Color.White, // Added explicit white color for better contrast
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
@@ -322,7 +326,9 @@ class MaintenanceScreen : Screen {
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Total Cans: $totalCans", fontWeight = FontWeight.Bold)
+                        Text("Total Cans: $totalCans",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White) // Added explicit white color
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -332,18 +338,22 @@ class MaintenanceScreen : Screen {
                         Text(
                             "Enter the new price for $selectedDrink",
                             fontSize = 14.sp,
+                            color = Color.White, // Added explicit white color for better contrast
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
                         OutlinedTextField(
                             value = newPrice,
                             onValueChange = { newPrice = it },
-                            label = { Text("New Price") },
+                            label = { Text("New Price", color = Color.White) }, // Added white color to label
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.fillMaxWidth(),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                                unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f)
+                                unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                                focusedTextColor = Color.White, // Added white text color when focused
+                                unfocusedTextColor = Color.White, // Added white text color when unfocused
+                                cursorColor = Color.White // Added white cursor color
                             )
                         )
 
@@ -408,6 +418,7 @@ class MaintenanceScreen : Screen {
                         Text(
                             "COLLECT ALL CASH HERE",
                             fontWeight = FontWeight.Bold,
+                            color = Color.White, // Added explicit white color
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center
                         )
