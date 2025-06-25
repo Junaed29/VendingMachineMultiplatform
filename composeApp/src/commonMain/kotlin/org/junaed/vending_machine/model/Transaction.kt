@@ -12,5 +12,6 @@ data class Transaction(
     val drinkPrice: String,
     val amountInserted: String,
     val changeGiven: String,
-    val coinsInserted: List<Int> = listOf() // List of coin values in sen
+    val coinsInserted: List<Int> = listOf(), // List of coin values in sen
+    val maintenanceAction: String = "" // Track maintenance operations
 )

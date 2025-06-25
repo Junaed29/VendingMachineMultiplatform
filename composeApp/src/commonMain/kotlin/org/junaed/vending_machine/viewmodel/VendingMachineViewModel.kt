@@ -53,6 +53,8 @@ class VendingMachineViewModel {
         private set
     var showChangeNotAvailableDialog by mutableStateOf(false)
         private set
+    var showMaintenanceDialog by mutableStateOf(false)
+        private set
 
     // Collection of inserted coins
     val insertedCoins = mutableStateListOf<Coin>()
@@ -107,13 +109,44 @@ class VendingMachineViewModel {
 
         drinkInventory = settings.drinkStockLevels
 
-        // Create drink items with accurate stock status
+        // If no stock levels are defined, set default values
+        if (drinkInventory.isEmpty()) {
+            drinkInventory = mapOf(
+                "BRAND 1" to 10,
+                "BRAND 2" to 10,
+                "BRAND 3" to 10,
+                "BRAND 4" to 10,
+                "BRAND 5" to 10
+            )
+        }
+
+        // Create drink items with accurate stock status and prices from settings
         availableDrinks = listOf(
-            DrinkItem("BRAND 1", "0.70", drinkInventory["BRAND 1"] ?: 0 > 0),
-            DrinkItem("BRAND 2", "0.70", drinkInventory["BRAND 2"] ?: 0 > 0),
-            DrinkItem("BRAND 3", "0.70", drinkInventory["BRAND 3"] ?: 0 > 0),
-            DrinkItem("BRAND 4", "0.60", drinkInventory["BRAND 4"] ?: 0 > 0),
-            DrinkItem("BRAND 5", "0.60", drinkInventory["BRAND 5"] ?: 0 > 0)
+            DrinkItem(
+                name = "BRAND 1",
+                price = settings.priceSettings["BRAND 1"]?.toString() ?: "0.70",
+                inStock = drinkInventory["BRAND 1"] ?: 0 > 0
+            ),
+            DrinkItem(
+                name = "BRAND 2",
+                price = settings.priceSettings["BRAND 2"]?.toString() ?: "0.70",
+                inStock = drinkInventory["BRAND 2"] ?: 0 > 0
+            ),
+            DrinkItem(
+                name = "BRAND 3",
+                price = settings.priceSettings["BRAND 3"]?.toString() ?: "0.70",
+                inStock = drinkInventory["BRAND 3"] ?: 0 > 0
+            ),
+            DrinkItem(
+                name = "BRAND 4",
+                price = settings.priceSettings["BRAND 4"]?.toString() ?: "0.60",
+                inStock = drinkInventory["BRAND 4"] ?: 0 > 0
+            ),
+            DrinkItem(
+                name = "BRAND 5",
+                price = settings.priceSettings["BRAND 5"]?.toString() ?: "0.60",
+                inStock = drinkInventory["BRAND 5"] ?: 0 > 0
+            )
         )
     }
 
@@ -139,13 +172,39 @@ class VendingMachineViewModel {
     }
 
     /**
+     * Check for maintenance mode before any customer action
+     * Returns true if operation should continue, false if blocked
+     */
+    private fun checkMaintenanceMode(): Boolean {
+        // Refresh maintenance status
+        loadMaintenanceStatus()
+
+        if (isMaintenanceMode) {
+            uiMessage = "System under maintenance. Please try again later."
+            return false
+        }
+
+        return true
+    }
+
+    /**
+     * Show maintenance login dialog
+     */
+    fun enterMaintenanceMode() {
+        // If there's an active transaction, cancel it first
+        if (insertedCoins.isNotEmpty()) {
+            returnCash()
+        }
+
+        showMaintenanceDialog = true
+    }
+
+    /**
      * Process a coin insertion attempt
      */
     fun insertCoin(coin: Coin) {
-        if (isMaintenanceMode) {
-            uiMessage = "System under maintenance"
-            return
-        }
+        // Block operation if in maintenance mode
+        if (!checkMaintenanceMode()) return
 
         if (vendingMachineService.isValidMalaysianCoin(coin)) {
             // Valid Malaysian coin
@@ -176,6 +235,8 @@ class VendingMachineViewModel {
      * Check if a drink is in stock
      */
     private fun isDrinkInStock(drinkName: String): Boolean {
+        // Refresh inventory data first
+        loadDrinkInventory()
         return drinkInventory[drinkName] ?: 0 > 0
     }
 
@@ -183,10 +244,8 @@ class VendingMachineViewModel {
      * Process drink selection
      */
     fun selectDrink(drink: DrinkItem) {
-        if (isMaintenanceMode) {
-            uiMessage = "System under maintenance"
-            return
-        }
+        // Block operation if in maintenance mode
+        if (!checkMaintenanceMode()) return
 
         // Check if the drink is in stock
         if (!isDrinkInStock(drink.name)) {
@@ -213,6 +272,9 @@ class VendingMachineViewModel {
      * Check if there's enough change available for a transaction
      */
     private fun isChangeAvailable(changeAmount: Double): Boolean {
+        // Refresh change data
+        loadAvailableChange()
+
         // Simplified change availability check
         // In a real implementation, this would consider the denominations needed
 
@@ -224,6 +286,9 @@ class VendingMachineViewModel {
      * Complete the purchase transaction
      */
     fun completePurchase() {
+        // Block operation if in maintenance mode
+        if (!checkMaintenanceMode()) return
+
         val drink = selectedDrink ?: return
 
         if (!vendingMachineService.hasEnoughMoney(totalInserted, drink.price)) {
@@ -263,6 +328,9 @@ class VendingMachineViewModel {
      * Proceed with purchase when change is not available
      */
     fun proceedWithoutChange() {
+        // Block operation if in maintenance mode
+        if (!checkMaintenanceMode()) return
+
         val drink = selectedDrink ?: return
 
         // Process the purchase without giving change
@@ -319,6 +387,9 @@ class VendingMachineViewModel {
      * Update coin inventory after a transaction
      */
     private fun updateCoinInventory() {
+        // Load latest coin data
+        loadAvailableChange()
+
         // Add inserted coins to inventory
         val updatedChange = availableChange.toMutableMap()
 
@@ -375,6 +446,12 @@ class VendingMachineViewModel {
      * Return inserted cash and terminate transaction
      */
     fun returnCash() {
+        // Block operation if in maintenance mode, unless called as part of entering maintenance mode
+        if (isMaintenanceMode && !showMaintenanceDialog) {
+            uiMessage = "System under maintenance. Please try again later."
+            return
+        }
+
         if (insertedCoins.isNotEmpty()) {
             changeAmount = totalInserted
             uiMessage = "Returning RM $totalInserted"
@@ -404,5 +481,15 @@ class VendingMachineViewModel {
      */
     fun closeDialog() {
         showChangeNotAvailableDialog = false
+        showMaintenanceDialog = false
+    }
+
+    /**
+     * Refresh data from storage (called after maintenance changes)
+     */
+    fun refreshData() {
+        loadMaintenanceStatus()
+        loadDrinkInventory()
+        loadAvailableChange()
     }
 }

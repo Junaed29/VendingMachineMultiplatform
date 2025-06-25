@@ -24,6 +24,7 @@ object VendingMachineColors {
     val AccentColor = Color(0xFFE63B8C) // VIMTO pink for accents
     val ButtonColor = Color(0xFF5992A5) // Blue for buttons
     val DisplayColor = Color(0xFF2ECC71) // Green for display text
+    val AccessGrantedColor = Color(0xFF27AE60) // Green for maintenance access
 
     // Coin Colors
     val SilverCoin = "#C0C0C0"

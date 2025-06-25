@@ -118,7 +118,8 @@ class MaintenanceScreen : Screen {
         // Function to verify password
         val verifyPassword = {
             val password = passwordDigits.joinToString("")
-            if (password.length == 6 && password == "123456") {
+            // Use view model's validatePassword method instead of hardcoded password
+            if (viewModel.validatePassword(password)) {
                 isAuthenticated = true
                 isPasswordInvalid = false
             } else {
@@ -249,86 +250,260 @@ class MaintenanceScreen : Screen {
                         Text("VERIFY PASSWORD", fontWeight = FontWeight.Bold)
                     }
                 } else {
+                    // Door unlocked status indicator
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = VendingMachineColors.AccessGrantedColor
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "MAINTENANCE MODE ACTIVE",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                color = Color.White
+                            )
+                            Text(
+                                "Door Unlocked - Access Granted",
+                                fontSize = 14.sp,
+                                color = Color.White
+                            )
+                            if (viewModel.maintenanceMessage.isNotEmpty()) {
+                                Text(
+                                    viewModel.maintenanceMessage,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color.White,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // AUTHENTICATED SECTIONS
 
                     // COIN COUNT SECTION
                     SectionCard(title = "Coin Count") {
                         Text(
-                            "Press the button to count the coins of the selected denomination",
+                            "View coins by denomination and update quantities",
                             fontSize = 14.sp,
-                            color = Color.White, // Added explicit white color for better contrast
+                            color = Color.White,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            CoinButton("10C") { totalCoins++ }
-                            CoinButton("20C") { totalCoins++ }
-                            CoinButton("50C") { totalCoins++ }
-                            CoinButton("RM 1") { totalCoins++ }
+                        // Coin counts from viewModel
+                        viewModel.coinsByDenomination.entries.sortedBy { it.key }.forEach { (denomination, count) ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                val denomText = when(denomination) {
+                                    10 -> "10 Sen"
+                                    20 -> "20 Sen"
+                                    50 -> "50 Sen"
+                                    100 -> "1 RM"
+                                    else -> "$denomination Sen"
+                                }
+
+                                Text(
+                                    denomText,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Medium
+                                )
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "Quantity: $count",
+                                        color = Color.White
+                                    )
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    var newValue by remember(denomination) { mutableStateOf("$count") }
+                                    var showUpdateField by remember(denomination) { mutableStateOf(false) }
+
+                                    if (showUpdateField) {
+                                        // Show number input field
+                                        OutlinedTextField(
+                                            value = newValue,
+                                            onValueChange = { value ->
+                                                if (value.isEmpty() || value.all { it.isDigit() }) {
+                                                    newValue = value
+                                                }
+                                            },
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            modifier = Modifier.width(80.dp),
+                                            colors = TextFieldDefaults.colors(
+                                                focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                                                unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                                                focusedTextColor = Color.White,
+                                                unfocusedTextColor = Color.White
+                                            ),
+                                            singleLine = true
+                                        )
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Button(
+                                            onClick = {
+                                                val quantity = newValue.toIntOrNull() ?: 0
+                                                if (viewModel.updateCoinQuantity(denomination, quantity)) {
+                                                    showUpdateField = false
+                                                }
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = VendingMachineColors.ButtonColor
+                                            ),
+                                            shape = RoundedCornerShape(4.dp),
+                                            modifier = Modifier.padding(4.dp)
+                                        ) {
+                                            Text("Save", fontSize = 12.sp)
+                                        }
+                                    } else {
+                                        // Show update button
+                                        Button(
+                                            onClick = { showUpdateField = true },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = VendingMachineColors.ButtonColor
+                                            ),
+                                            shape = RoundedCornerShape(4.dp),
+                                            modifier = Modifier.padding(4.dp)
+                                        ) {
+                                            Text("Update", fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Total Coins: $totalCoins",
+
+                        // Total cash value
+                        Text(
+                            "Total Cash Value: RM ${formatToTwoDecimalPlaces(viewModel.calculateTotalCoinValue())}",
                             fontWeight = FontWeight.Bold,
-                            color = Color.White) // Added explicit white color
+                            color = Color.White
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // CAN COUNT SECTION
-                    SectionCard(title = "Can Count") {
+                    SectionCard(title = "Drink Inventory") {
                         Text(
-                            "Press the button to count the cans of the selected drink",
+                            "View and update drink inventory levels",
                             fontSize = 14.sp,
-                            color = Color.White, // Added explicit white color for better contrast
+                            color = Color.White,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
-                        // Row 1 of drink buttons
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            DrinkButton("Drink 1") {
-                                selectedDrink = "Drink 1"
-                                totalCans++
-                            }
-                            DrinkButton("Drink 2") {
-                                selectedDrink = "Drink 2"
-                                totalCans++
-                            }
-                            DrinkButton("Drink 3") {
-                                selectedDrink = "Drink 3"
-                                totalCans++
-                            }
-                        }
+                        // Drink inventory from viewModel
+                        viewModel.drinkStockLevels.entries.sortedBy { it.key }.forEach { (drinkName, count) ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    drinkName,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Medium
+                                )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "Quantity: $count",
+                                        color = Color.White
+                                    )
 
-                        // Row 2 of drink buttons
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            DrinkButton("Drink 4") {
-                                selectedDrink = "Drink 4"
-                                totalCans++
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    var newValue by remember(drinkName) { mutableStateOf("$count") }
+                                    var showUpdateField by remember(drinkName) { mutableStateOf(false) }
+
+                                    if (showUpdateField) {
+                                        // Show number input field
+                                        OutlinedTextField(
+                                            value = newValue,
+                                            onValueChange = { value ->
+                                                if (value.isEmpty() || value.all { it.isDigit() }) {
+                                                    newValue = value
+                                                }
+                                            },
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            modifier = Modifier.width(80.dp),
+                                            colors = TextFieldDefaults.colors(
+                                                focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                                                unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                                                focusedTextColor = Color.White,
+                                                unfocusedTextColor = Color.White
+                                            ),
+                                            singleLine = true
+                                        )
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Button(
+                                            onClick = {
+                                                val quantity = newValue.toIntOrNull() ?: 0
+                                                if (viewModel.updateDrinkStock(drinkName, quantity)) {
+                                                    showUpdateField = false
+                                                }
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = VendingMachineColors.ButtonColor
+                                            ),
+                                            shape = RoundedCornerShape(4.dp),
+                                            modifier = Modifier.padding(4.dp)
+                                        ) {
+                                            Text("Save", fontSize = 12.sp)
+                                        }
+                                    } else {
+                                        // Show update button
+                                        Button(
+                                            onClick = { showUpdateField = true },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = VendingMachineColors.ButtonColor
+                                            ),
+                                            shape = RoundedCornerShape(4.dp),
+                                            modifier = Modifier.padding(4.dp)
+                                        ) {
+                                            Text("Update", fontSize = 12.sp)
+                                        }
+                                    }
+                                }
                             }
-                            DrinkButton("Drink 5") {
-                                selectedDrink = "Drink 5"
-                                totalCans++
-                            }
-                            // Empty space to maintain symmetry with the row above
-                            Spacer(modifier = Modifier.width(80.dp))
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Total Cans: $totalCans",
+
+                        // Total drinks
+                        Text(
+                            "Total Drinks: ${viewModel.drinkStockLevels.values.sum()}",
                             fontWeight = FontWeight.Bold,
-                            color = Color.White) // Added explicit white color
+                            color = Color.White
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -336,24 +511,79 @@ class MaintenanceScreen : Screen {
                     // PRICE UPDATE SECTION
                     SectionCard(title = "Price Update") {
                         Text(
-                            "Enter the new price for $selectedDrink",
+                            "Select a drink and enter a new price",
                             fontSize = 14.sp,
-                            color = Color.White, // Added explicit white color for better contrast
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            color = Color.White,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
 
+                        // Drink selector
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "Selected Drink:",
+                                color = Color.White,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            // Dropdown-like selection (simplified to buttons for KMP)
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                viewModel.drinkPriceSettings.keys.sorted().forEach { drinkName ->
+                                    val isSelected = selectedDrink == drinkName
+                                    Button(
+                                        onClick = { selectedDrink = drinkName },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (isSelected)
+                                                VendingMachineColors.AccentColor
+                                            else
+                                                VendingMachineColors.ButtonColor.copy(alpha = 0.6f)
+                                        ),
+                                        shape = RoundedCornerShape(4.dp),
+                                        modifier = Modifier.padding(horizontal = 2.dp)
+                                    ) {
+                                        Text(
+                                            drinkName.replace("BRAND ", "B"),
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Current price display
+                        val currentPrice = viewModel.drinkPriceSettings[selectedDrink] ?: 0.0
+                        Text(
+                            "Current Price: RM ${formatToTwoDecimalPlaces(currentPrice)}",
+                            color = VendingMachineColors.DisplayColor,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+
+                        // New price input
                         OutlinedTextField(
                             value = newPrice,
-                            onValueChange = { newPrice = it },
-                            label = { Text("New Price", color = Color.White) }, // Added white color to label
+                            onValueChange = { input ->
+                                // Only accept valid decimal numbers
+                                if (input.isEmpty() || input.matches(Regex("^\\d*\\.?\\d{0,2}$"))) {
+                                    newPrice = input
+                                }
+                            },
+                            label = { Text("New Price (RM)", color = Color.White) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.fillMaxWidth(),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
                                 unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                                focusedTextColor = Color.White, // Added white text color when focused
-                                unfocusedTextColor = Color.White, // Added white text color when unfocused
-                                cursorColor = Color.White // Added white cursor color
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = Color.White
                             )
                         )
 
@@ -361,10 +591,12 @@ class MaintenanceScreen : Screen {
 
                         Button(
                             onClick = {
-                                // Update price logic
+                                // Update price logic with validation
                                 newPrice.toDoubleOrNull()?.let { price ->
-                                    viewModel.updateDrinkPrice(selectedDrink, price)
-                                    newPrice = ""
+                                    if (price > 0) {
+                                        viewModel.updateDrinkPrice(selectedDrink, price)
+                                        newPrice = ""
+                                    }
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),

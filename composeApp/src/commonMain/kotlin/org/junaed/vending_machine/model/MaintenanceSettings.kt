@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class MaintenanceSettings(
-    val adminPassword: String = "admin123", // Default admin password
+    val adminPassword: String = "123456", // Default admin password
     val drinkStockLevels: Map<String, Int> = mapOf(), // Stock levels for drinks
     val priceSettings: Map<String, Double> = mapOf(), // Price settings for products
     val lastMaintenanceDate: Long = 0, // Timestamp of last maintenance
