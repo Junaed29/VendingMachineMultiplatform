@@ -4,11 +4,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlinx.datetime.Clock
 import org.junaed.vending_machine.logic.CoinRepository
+import org.junaed.vending_machine.logic.getSettingsFactory
+import org.junaed.vending_machine.logic.StorageService
 import org.junaed.vending_machine.logic.VendingMachineService
 import org.junaed.vending_machine.model.Coin
 import org.junaed.vending_machine.model.DrinkItem
+import org.junaed.vending_machine.model.MaintenanceSettings
+import org.junaed.vending_machine.model.Transaction
 import org.junaed.vending_machine.ui.theme.VendingMachineColors
+import kotlinx.serialization.serializer
 
 /**
  * ViewModel that manages the state and business logic for the vending machine screen
@@ -16,6 +22,15 @@ import org.junaed.vending_machine.ui.theme.VendingMachineColors
 class VendingMachineViewModel {
     private val vendingMachineService = VendingMachineService()
     private val coinRepository = CoinRepository()
+    private val storageService = StorageService(getSettingsFactory().createSettings())
+
+    // Constants for storage keys
+    companion object {
+        const val MAINTENANCE_SETTINGS_KEY = "maintenance_settings"
+        const val TRANSACTIONS_KEY = "transactions"
+        const val DRINK_INVENTORY_KEY = "drink_inventory"
+        const val AVAILABLE_CHANGE_KEY = "available_change"
+    }
 
     // UI State
     var totalInserted by mutableStateOf("0.00")
@@ -28,22 +43,33 @@ class VendingMachineViewModel {
         private set
     var invalidCoinMessage by mutableStateOf("")
         private set
-    var showNoChangeMessage by mutableStateOf(true) // Always showing as per requirement
+    var showNoChangeMessage by mutableStateOf(false)
         private set
     var dispensedDrink by mutableStateOf("")
+        private set
+    var uiMessage by mutableStateOf("")
+        private set
+    var isMaintenanceMode by mutableStateOf(false)
+        private set
+    var showChangeNotAvailableDialog by mutableStateOf(false)
         private set
 
     // Collection of inserted coins
     val insertedCoins = mutableStateListOf<Coin>()
 
-    // Predefined drink items for the vending machine
-    val availableDrinks = listOf(
-        DrinkItem("BRAND 1", "0.70", false),
-        DrinkItem("BRAND 2", "0.70", false),
-        DrinkItem("BRAND 3", "0.70", false),
-        DrinkItem("BRAND 4", "0.60", false),
-        DrinkItem("BRAND 5", "0.60", false)
-    )
+    // Live drink inventory with stock status
+    var availableDrinks = listOf<DrinkItem>()
+        private set
+
+    // Cached inventory data
+    private var drinkInventory = mapOf<String, Int>()
+    private var availableChange = mapOf<Int, Int>()
+
+    init {
+        loadMaintenanceStatus()
+        loadDrinkInventory()
+        loadAvailableChange()
+    }
 
     // Map of coin display colors
     val coinColors = mapOf(
@@ -57,36 +83,292 @@ class VendingMachineViewModel {
     )
 
     /**
+     * Check if the system is in maintenance mode
+     */
+    private fun loadMaintenanceStatus() {
+        val settings = storageService.getObject(
+            MAINTENANCE_SETTINGS_KEY,
+            serializer<MaintenanceSettings>(),
+            MaintenanceSettings()
+        ) ?: MaintenanceSettings()
+
+        isMaintenanceMode = settings.isMaintenanceActive
+    }
+
+    /**
+     * Load drink inventory from storage
+     */
+    private fun loadDrinkInventory() {
+        val settings = storageService.getObject(
+            MAINTENANCE_SETTINGS_KEY,
+            serializer<MaintenanceSettings>(),
+            MaintenanceSettings()
+        ) ?: MaintenanceSettings()
+
+        drinkInventory = settings.drinkStockLevels
+
+        // Create drink items with accurate stock status
+        availableDrinks = listOf(
+            DrinkItem("BRAND 1", "0.70", drinkInventory["BRAND 1"] ?: 0 > 0),
+            DrinkItem("BRAND 2", "0.70", drinkInventory["BRAND 2"] ?: 0 > 0),
+            DrinkItem("BRAND 3", "0.70", drinkInventory["BRAND 3"] ?: 0 > 0),
+            DrinkItem("BRAND 4", "0.60", drinkInventory["BRAND 4"] ?: 0 > 0),
+            DrinkItem("BRAND 5", "0.60", drinkInventory["BRAND 5"] ?: 0 > 0)
+        )
+    }
+
+    /**
+     * Load available change from storage
+     */
+    private fun loadAvailableChange() {
+        availableChange = storageService.getObject(
+            AVAILABLE_CHANGE_KEY,
+            serializer<Map<Int, Int>>(),
+            mapOf(
+                10 to 20,  // 20 coins of 10 sen
+                20 to 20,  // 20 coins of 20 sen
+                50 to 20,  // 20 coins of 50 sen
+                100 to 10  // 10 coins of 1 RM
+            )
+        ) ?: mapOf(
+            10 to 20,
+            20 to 20,
+            50 to 20,
+            100 to 10
+        )
+    }
+
+    /**
      * Process a coin insertion attempt
      */
     fun insertCoin(coin: Coin) {
+        if (isMaintenanceMode) {
+            uiMessage = "System under maintenance"
+            return
+        }
+
         if (vendingMachineService.isValidMalaysianCoin(coin)) {
             // Valid Malaysian coin
             insertedCoins.add(coin)
             totalInserted = vendingMachineService.calculateTotal(insertedCoins)
+            uiMessage = ""
             showInvalidCoinMessage = false
+
+            // If a drink is selected, check if we have enough money now
+            selectedDrink?.let { drink ->
+                if (vendingMachineService.hasEnoughMoney(totalInserted, drink.price)) {
+                    uiMessage = "You have inserted enough money for ${drink.name}"
+                } else {
+                    val remainingAmount = vendingMachineService.calculateChange(drink.price, totalInserted)
+                    uiMessage = "Please insert RM $remainingAmount more"
+                }
+            }
         } else {
             // Foreign or invalid coin
             val reason = vendingMachineService.getCoinRejectionReason(coin)
             invalidCoinMessage = reason ?: "Invalid coin"
             showInvalidCoinMessage = true
+            uiMessage = "Invalid coin. Please insert a valid Malaysian coin."
         }
+    }
+
+    /**
+     * Check if a drink is in stock
+     */
+    private fun isDrinkInStock(drinkName: String): Boolean {
+        return drinkInventory[drinkName] ?: 0 > 0
     }
 
     /**
      * Process drink selection
      */
     fun selectDrink(drink: DrinkItem) {
-        if (vendingMachineService.hasEnoughMoney(totalInserted, drink.price)) {
-            changeAmount = vendingMachineService.calculateChange(
-                totalInserted,
-                drink.price
-            )
-            selectedDrink = drink
-            dispensedDrink = drink.name
-            totalInserted = "0.00"
-            insertedCoins.clear()
+        if (isMaintenanceMode) {
+            uiMessage = "System under maintenance"
+            return
         }
+
+        // Check if the drink is in stock
+        if (!isDrinkInStock(drink.name)) {
+            uiMessage = "Drink not in stock"
+            return
+        }
+
+        selectedDrink = drink
+
+        // If user has already inserted money, check if it's enough
+        if (insertedCoins.isNotEmpty()) {
+            if (vendingMachineService.hasEnoughMoney(totalInserted, drink.price)) {
+                uiMessage = "You have inserted enough money for ${drink.name}"
+            } else {
+                val remainingAmount = vendingMachineService.calculateChange(drink.price, totalInserted)
+                uiMessage = "Please insert RM $remainingAmount more"
+            }
+        } else {
+            uiMessage = "Selected ${drink.name}. Please insert RM ${drink.price}"
+        }
+    }
+
+    /**
+     * Check if there's enough change available for a transaction
+     */
+    private fun isChangeAvailable(changeAmount: Double): Boolean {
+        // Simplified change availability check
+        // In a real implementation, this would consider the denominations needed
+
+        // For now, just check if we have any coins for change
+        return availableChange.values.sum() > 0
+    }
+
+    /**
+     * Complete the purchase transaction
+     */
+    fun completePurchase() {
+        val drink = selectedDrink ?: return
+
+        if (!vendingMachineService.hasEnoughMoney(totalInserted, drink.price)) {
+            val remainingAmount = vendingMachineService.calculateChange(drink.price, totalInserted)
+            uiMessage = "Please insert RM $remainingAmount more"
+            return
+        }
+
+        // Calculate change amount
+        val change = vendingMachineService.calculateChange(totalInserted, drink.price)
+        val changeDouble = change.toDoubleOrNull() ?: 0.0
+
+        // Check if change is needed and available
+        if (changeDouble > 0.0 && !isChangeAvailable(changeDouble)) {
+            showChangeNotAvailableDialog = true
+            return
+        }
+
+        // Process the purchase
+        dispensedDrink = drink.name
+        changeAmount = change
+
+        // Update inventory
+        updateDrinkInventory(drink.name)
+        updateCoinInventory()
+
+        // Log the transaction
+        logTransaction(drink)
+
+        // Reset transaction state
+        totalInserted = "0.00"
+        uiMessage = "Enjoy your ${drink.name}!"
+        insertedCoins.clear()
+    }
+
+    /**
+     * Proceed with purchase when change is not available
+     */
+    fun proceedWithoutChange() {
+        val drink = selectedDrink ?: return
+
+        // Process the purchase without giving change
+        dispensedDrink = drink.name
+        changeAmount = "0.00"
+
+        // Update inventory
+        updateDrinkInventory(drink.name)
+        updateCoinInventory()
+
+        // Log the transaction (note: customer didn't receive change)
+        logTransaction(drink, changeGiven = "0.00")
+
+        // Reset transaction state
+        totalInserted = "0.00"
+        uiMessage = "Enjoy your ${drink.name}!"
+        showChangeNotAvailableDialog = false
+        insertedCoins.clear()
+    }
+
+    /**
+     * Update drink inventory after purchase
+     */
+    private fun updateDrinkInventory(drinkName: String) {
+        val currentStock = drinkInventory[drinkName] ?: 0
+        if (currentStock > 0) {
+            val updatedInventory = drinkInventory.toMutableMap()
+            updatedInventory[drinkName] = currentStock - 1
+            drinkInventory = updatedInventory
+
+            // Update maintenance settings
+            val settings = storageService.getObject(
+                MAINTENANCE_SETTINGS_KEY,
+                serializer<MaintenanceSettings>(),
+                MaintenanceSettings()
+            ) ?: MaintenanceSettings()
+
+            val updatedSettings = settings.copy(
+                drinkStockLevels = updatedInventory
+            )
+
+            storageService.saveObject(
+                MAINTENANCE_SETTINGS_KEY,
+                updatedSettings,
+                serializer()
+            )
+
+            // Refresh the available drinks list
+            loadDrinkInventory()
+        }
+    }
+
+    /**
+     * Update coin inventory after a transaction
+     */
+    private fun updateCoinInventory() {
+        // Add inserted coins to inventory
+        val updatedChange = availableChange.toMutableMap()
+
+        for (coin in insertedCoins) {
+            val count = updatedChange[coin.valueSen] ?: 0
+            updatedChange[coin.valueSen] = count + 1
+        }
+
+        // Deduct change given (simplified)
+        // In a real implementation, this would calculate the specific coins used for change
+
+        availableChange = updatedChange
+
+        // Save updated change inventory
+        storageService.saveObject(
+            AVAILABLE_CHANGE_KEY,
+            availableChange,
+            serializer()
+        )
+    }
+
+    /**
+     * Log a completed transaction
+     */
+    private fun logTransaction(drink: DrinkItem, changeGiven: String = changeAmount) {
+        val transaction = Transaction(
+            timestamp = Clock.System.now().toEpochMilliseconds(),
+            drinkName = drink.name,
+            drinkPrice = drink.price,
+            amountInserted = totalInserted,
+            changeGiven = changeGiven,
+            coinsInserted = insertedCoins.map { it.valueSen }
+        )
+
+        // Get existing transactions
+        val transactions = storageService.getObject(
+            TRANSACTIONS_KEY,
+            serializer<List<Transaction>>(),
+            listOf()
+        ) ?: listOf()
+
+        // Add new transaction to the list
+        val updatedTransactions = transactions + transaction
+
+        // Save updated transactions
+        storageService.saveObject(
+            TRANSACTIONS_KEY,
+            updatedTransactions,
+            serializer()
+        )
     }
 
     /**
@@ -95,8 +377,10 @@ class VendingMachineViewModel {
     fun returnCash() {
         if (insertedCoins.isNotEmpty()) {
             changeAmount = totalInserted
+            uiMessage = "Returning RM $totalInserted"
             totalInserted = "0.00"
             insertedCoins.clear()
+            selectedDrink = null
         }
     }
 
@@ -110,6 +394,15 @@ class VendingMachineViewModel {
         showInvalidCoinMessage = false
         invalidCoinMessage = ""
         dispensedDrink = ""
+        uiMessage = ""
+        showChangeNotAvailableDialog = false
         insertedCoins.clear()
+    }
+
+    /**
+     * Close any active dialogs
+     */
+    fun closeDialog() {
+        showChangeNotAvailableDialog = false
     }
 }
