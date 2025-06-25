@@ -54,8 +54,9 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import kotlinx.coroutines.delay
-import org.junaed.vending_machine.logic.VendingMachineService
 import org.junaed.vending_machine.ui.theme.VendingMachineColors
+import org.junaed.vending_machine.ui.utils.WindowSize
+import org.junaed.vending_machine.ui.utils.rememberWindowSize
 import org.junaed.vending_machine.viewmodel.MaintenanceViewModel
 import kotlin.math.round
 
@@ -105,6 +106,14 @@ class MaintenanceScreen : Screen {
 
         // Create focus requesters for each password digit field
         val focusRequesters = remember { List(6) { FocusRequester() } }
+
+        // Check window size for responsive design
+        val windowSize = rememberWindowSize()
+        val isDesktop = windowSize == WindowSize.EXPANDED
+
+        // Adjust field size and padding based on platform
+        val digitFieldSize = if (isDesktop) 56.dp else 52.dp // Increased size for mobile
+        val digitFieldPadding = if (isDesktop) 6.dp else 2.dp // Reduced padding for mobile to prevent text cutoff
 
         // Function to verify password
         val verifyPassword = {
@@ -183,10 +192,13 @@ class MaintenanceScreen : Screen {
                                 },
                                 singleLine = true,
                                 modifier = Modifier
-                                    .size(48.dp)
-                                    .focusRequester(focusRequesters[index]),
+                                    .size(digitFieldSize)
+                                    .focusRequester(focusRequesters[index])
+                                    .padding(horizontal = digitFieldPadding),
                                 textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
+                                    // Reduce text size on desktop for better display within field
+                                    fontSize = if (isDesktop) 18.sp else 16.sp
                                 ),
                                 colors = TextFieldDefaults.colors(
                                     focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
