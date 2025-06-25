@@ -127,6 +127,14 @@ class VendingMachineScreen : Screen {
         viewModel: VendingMachineViewModel,
         innerPadding: androidx.compose.foundation.layout.PaddingValues
     ) {
+        // Handle the change not available dialog
+        ChangeNotAvailableDialog(
+            show = viewModel.showChangeNotAvailableDialog,
+            onProceed = { viewModel.proceedWithoutChange() },
+            onCancel = { viewModel.returnCash() },
+            onDismiss = { viewModel.closeDialog() }
+        )
+
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -142,17 +150,22 @@ class VendingMachineScreen : Screen {
             ) {
                 VimtoMachineHeader()
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Status message section
+                StatusMessageSection(viewModel.uiMessage)
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Coin insertion section
                 CoinInsertionSection(viewModel)
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Total money display
                 MoneyDisplaySection(viewModel.totalInserted)
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Return cash button
                 ReturnCashButton(
@@ -171,12 +184,17 @@ class VendingMachineScreen : Screen {
                 // Drink selection section
                 DrinkSelectionSection(viewModel)
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Purchase button
+                PurchaseButton(viewModel)
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // No change message
                 NoChangeSection(showNoChangeMessage = viewModel.showNoChangeMessage)
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Collection slots
                 CollectionSlotsSection(
@@ -194,6 +212,14 @@ class VendingMachineScreen : Screen {
         viewModel: VendingMachineViewModel,
         innerPadding: androidx.compose.foundation.layout.PaddingValues
     ) {
+        // Handle the change not available dialog
+        ChangeNotAvailableDialog(
+            show = viewModel.showChangeNotAvailableDialog,
+            onProceed = { viewModel.proceedWithoutChange() },
+            onCancel = { viewModel.returnCash() },
+            onDismiss = { viewModel.closeDialog() }
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -203,6 +229,11 @@ class VendingMachineScreen : Screen {
         ) {
             // Machine header
             VimtoMachineHeader()
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Status message section
+            StatusMessageSection(viewModel.uiMessage)
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -218,6 +249,11 @@ class VendingMachineScreen : Screen {
 
             // Drink selection section
             DrinkSelectionSection(viewModel)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Purchase button
+            PurchaseButton(viewModel)
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -576,6 +612,115 @@ class VendingMachineScreen : Screen {
                     fontSize = 18.sp
                 )
             }
+        }
+    }
+
+    @Composable
+    private fun StatusMessageSection(message: String) {
+        if (message.isNotEmpty()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = VendingMachineColors.MachinePanelColor.copy(alpha = 0.8f)
+                ),
+                border = BorderStroke(1.dp, VendingMachineColors.AccentColor)
+            ) {
+                Text(
+                    text = message,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    color = VendingMachineColors.DisplayColor,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun ChangeNotAvailableDialog(
+        show: Boolean,
+        onProceed: () -> Unit,
+        onCancel: () -> Unit,
+        onDismiss: () -> Unit
+    ) {
+        if (show) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = onDismiss,
+                title = {
+                    Text(
+                        "Change Not Available",
+                        fontWeight = FontWeight.Bold,
+                        color = VendingMachineColors.AccentColor
+                    )
+                },
+                text = {
+                    Text(
+                        "Change is not available. Do you want to cancel or continue without change?",
+                        color = Color.White
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = onProceed,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = VendingMachineColors.AccentColor
+                        )
+                    ) {
+                        Text("Proceed Without Change")
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = onCancel,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Gray
+                        )
+                    ) {
+                        Text("Cancel")
+                    }
+                },
+                containerColor = VendingMachineColors.MachinePanelColor,
+                titleContentColor = VendingMachineColors.DisplayColor,
+                textContentColor = Color.White
+            )
+        }
+    }
+
+    @Composable
+    private fun PurchaseButton(viewModel: VendingMachineViewModel) {
+        val hasEnoughMoney = viewModel.selectedDrink?.let { drink ->
+            viewModel.insertedCoins.isNotEmpty() &&
+            try {
+                val inserted = viewModel.totalInserted.toDouble()
+                val price = drink.price.toDouble()
+                inserted >= price
+            } catch (_: NumberFormatException) {
+                false
+            }
+        } ?: false
+
+        Button(
+            onClick = { viewModel.completePurchase() },
+            enabled = hasEnoughMoney,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = VendingMachineColors.AccentColor,
+                disabledContainerColor = Color.Gray
+            ),
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            Text(
+                "PURCHASE DRINK",
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
