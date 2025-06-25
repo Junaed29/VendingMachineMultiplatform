@@ -34,13 +34,17 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -49,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import kotlinx.coroutines.delay
 import org.junaed.vending_machine.logic.VendingMachineService
 import org.junaed.vending_machine.ui.theme.VendingMachineColors
 import org.junaed.vending_machine.viewmodel.MaintenanceViewModel
@@ -81,7 +86,7 @@ class MaintenanceScreen : Screen {
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
     @Composable
     override fun Content() {
         // Initialize the ViewModel with persistent storage support
@@ -97,6 +102,20 @@ class MaintenanceScreen : Screen {
         var totalCans by remember { mutableIntStateOf(0) }
         var cashDisplay by remember { mutableStateOf("") }
         var showCashSlot by remember { mutableStateOf(false) }
+
+        // Create focus requesters for each password digit field
+        val focusRequesters = remember { List(6) { FocusRequester() } }
+
+        // Function to verify password
+        val verifyPassword = {
+            val password = passwordDigits.joinToString("")
+            if (password.length == 6 && password == "123456") {
+                isAuthenticated = true
+                isPasswordInvalid = false
+            } else {
+                isPasswordInvalid = true
+            }
+        }
 
         val navigator = LocalNavigator.current
 
@@ -133,11 +152,11 @@ class MaintenanceScreen : Screen {
                         "TYPE PASSWORD HERE",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
-                        color = Color.White,
+                        color = Color.Black,
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
 
-                    // 6-digit password input fields
+                    // 6-digit password input fields with auto-focus
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
@@ -147,13 +166,25 @@ class MaintenanceScreen : Screen {
                                 value = digit,
                                 onValueChange = { newValue ->
                                     if (newValue.length <= 1 && newValue.all { it.isDigit() }) {
+                                        // Update the digit value
                                         val newDigits = passwordDigits.toMutableList()
                                         newDigits[index] = newValue
                                         passwordDigits = newDigits
+
+                                        // If a digit is entered and not the last field, focus next field
+                                        if (newValue.isNotEmpty() && index < passwordDigits.size - 1) {
+                                            focusRequesters[index + 1].requestFocus()
+                                        }
+                                        // If it's the last field and a digit is entered, auto-submit
+                                        else if (newValue.isNotEmpty() && index == passwordDigits.size - 1) {
+                                            verifyPassword()
+                                        }
                                     }
                                 },
                                 singleLine = true,
-                                modifier = Modifier.size(48.dp),
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .focusRequester(focusRequesters[index]),
                                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                                     textAlign = TextAlign.Center
                                 ),
@@ -166,6 +197,12 @@ class MaintenanceScreen : Screen {
                         }
                     }
 
+                    // Request focus on first field when screen is shown
+                    LaunchedEffect(Unit) {
+                        delay(300) // Short delay to ensure UI is ready
+                        focusRequesters[0].requestFocus()
+                    }
+
                     // Error message for invalid password
                     if (isPasswordInvalid) {
                         Text(
@@ -174,21 +211,23 @@ class MaintenanceScreen : Screen {
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
+
+                        // Clear password fields and refocus first field after showing error
+                        LaunchedEffect(isPasswordInvalid) {
+                            if (isPasswordInvalid) {
+                                delay(1000) // Show error message for a moment
+                                passwordDigits = List(6) { "" }
+                                delay(300)
+                                focusRequesters[0].requestFocus()
+                                isPasswordInvalid = false // Hide error message when clearing fields
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = {
-                            // Check if password is correct (all digits filled and equals "123456" for now)
-                            val password = passwordDigits.joinToString("")
-                            if (password.length == 6 && password == "123456") {
-                                isAuthenticated = true
-                                isPasswordInvalid = false
-                            } else {
-                                isPasswordInvalid = true
-                            }
-                        },
+                        onClick = { verifyPassword() },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = VendingMachineColors.ButtonColor
