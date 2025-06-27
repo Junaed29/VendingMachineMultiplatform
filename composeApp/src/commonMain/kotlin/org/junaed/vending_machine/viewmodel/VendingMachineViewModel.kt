@@ -55,6 +55,8 @@ class VendingMachineViewModel {
         private set
     var showMaintenanceDialog by mutableStateOf(false)
         private set
+    var isTransactionActive by mutableStateOf(false)
+        private set
 
     // Collection of inserted coins
     val insertedCoins = mutableStateListOf<Coin>()
@@ -253,6 +255,13 @@ class VendingMachineViewModel {
         // Block operation if in maintenance mode
         if (!checkMaintenanceMode()) return
 
+        // If a transaction is already active with a different drink selected,
+        // don't allow changing the selection
+        if (isTransactionActive && selectedDrink != null && selectedDrink?.name != drink.name) {
+            uiMessage = "Complete current transaction first or terminate it"
+            return
+        }
+
         // Check if the drink is in stock
         if (!isDrinkInStock(drink.name)) {
             uiMessage = "Drink not in stock"
@@ -260,6 +269,7 @@ class VendingMachineViewModel {
         }
 
         selectedDrink = drink
+        isTransactionActive = true
 
         // If user has already inserted money, check if it's enough
         if (insertedCoins.isNotEmpty()) {
@@ -463,8 +473,32 @@ class VendingMachineViewModel {
             uiMessage = "Returning RM $totalInserted"
             totalInserted = "0.00"
             insertedCoins.clear()
-            selectedDrink = null
         }
+
+        // Reset transaction state entirely
+        selectedDrink = null
+        isTransactionActive = false
+    }
+
+    /**
+     * Terminate the current transaction
+     * This returns the customer's money and cancels the transaction without logging any records
+     */
+    fun terminateTransaction() {
+        // Return any inserted money
+        if (insertedCoins.isNotEmpty()) {
+            changeAmount = totalInserted
+            uiMessage = "Transaction terminated. Returning RM $totalInserted"
+        } else {
+            uiMessage = "Transaction terminated"
+        }
+
+        // Reset all transaction state
+        totalInserted = "0.00"
+        selectedDrink = null
+        insertedCoins.clear()
+        isTransactionActive = false
+        showInvalidCoinMessage = false
     }
 
     /**

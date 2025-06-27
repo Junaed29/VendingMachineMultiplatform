@@ -26,11 +26,35 @@ import org.junaed.vending_machine.model.DrinkItem
 fun DrinkSelectionButton(
     drinkItem: DrinkItem,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
+    isSelectable: Boolean = true
 ) {
-    val backgroundColor = if (drinkItem.inStock) Color(0xFF1A2232) else Color(0xFF0A1622)
-    val buttonColor = if (drinkItem.inStock) Color(0xFFF39C12) else Color.Gray
-    val statusText = if (drinkItem.inStock) "" else "NOT IN STOCK"
+    val inStock = drinkItem.inStock
+    val isEnabled = inStock && isSelectable
+
+    // Change background color if selected
+    val backgroundColor = when {
+        isSelected -> Color(0xFF2C4B8E) // Highlighted blue when selected
+        inStock -> Color(0xFF1A2232)
+        else -> Color(0xFF0A1622)
+    }
+
+    // Change button color based on selection and availability
+    val buttonColor = when {
+        isSelected -> Color(0xFF4CAF50) // Green when selected
+        !isEnabled -> Color.Gray
+        inStock -> Color(0xFFF39C12)
+        else -> Color.Gray
+    }
+
+    // Status text for drink availability
+    val statusText = when {
+        !inStock -> "OUT OF STOCK"
+        isSelected -> "SELECTED"
+        !isSelectable -> "NOT AVAILABLE"
+        else -> ""
+    }
 
     Card(
         modifier = modifier
@@ -39,7 +63,10 @@ fun DrinkSelectionButton(
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor
         ),
-        border = BorderStroke(1.dp, Color.DarkGray),
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 1.dp,
+            color = if (isSelected) Color(0xFF4CAF50) else Color.DarkGray
+        ),
         shape = RoundedCornerShape(4.dp)
     ) {
         Row(
@@ -68,10 +95,14 @@ fun DrinkSelectionButton(
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
-                    if (!drinkItem.inStock) {
+                    if (statusText.isNotEmpty()) {
                         Text(
                             text = statusText,
-                            color = Color.Red,
+                            color = when {
+                                !inStock -> Color.Red
+                                isSelected -> Color(0xFF4CAF50)
+                                else -> Color.Yellow
+                            },
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -80,8 +111,8 @@ fun DrinkSelectionButton(
             }
 
             Button(
-                onClick = { if (drinkItem.inStock) onClick() },
-                enabled = drinkItem.inStock,
+                onClick = onClick,
+                enabled = isEnabled,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = buttonColor,
                     disabledContainerColor = Color.DarkGray
@@ -89,8 +120,8 @@ fun DrinkSelectionButton(
                 shape = MaterialTheme.shapes.small
             ) {
                 Text(
-                    text = "PRESS TO SELECT",
-                    color = if (drinkItem.inStock) Color.White else Color.LightGray,
+                    text = if (isSelected) "SELECTED" else "PRESS TO SELECT",
+                    color = if (isEnabled || isSelected) Color.White else Color.LightGray,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp
                 )

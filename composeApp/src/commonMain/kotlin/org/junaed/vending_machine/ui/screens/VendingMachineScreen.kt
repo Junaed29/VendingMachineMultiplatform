@@ -167,6 +167,11 @@ class VendingMachineScreen : Screen {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Terminate Transaction button
+                TerminateTransactionButton(viewModel)
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Return cash button
                 ReturnCashButton(
                     onReturnCash = { viewModel.returnCash() }
@@ -261,6 +266,11 @@ class VendingMachineScreen : Screen {
             NoChangeSection(showNoChangeMessage = viewModel.showNoChangeMessage)
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Terminate Transaction button
+            TerminateTransactionButton(viewModel)
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Return cash button
             ReturnCashButton(
@@ -498,9 +508,16 @@ class VendingMachineScreen : Screen {
                 modifier = Modifier.padding(8.dp)
             ) {
                 viewModel.availableDrinks.forEach { drink ->
+                    // Determine if this drink is selectable based on transaction state
+                    val isActive = viewModel.isTransactionActive
+                    val isSelected = viewModel.selectedDrink?.name == drink.name
+                    val isSelectable = !isActive || isSelected
+
                     DrinkSelectionButton(
                         drinkItem = drink,
-                        onClick = { viewModel.selectDrink(drink) }
+                        onClick = { viewModel.selectDrink(drink) },
+                        isSelected = isSelected,
+                        isSelectable = isSelectable
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
@@ -549,6 +566,23 @@ class VendingMachineScreen : Screen {
                 .padding(vertical = 8.dp)
         ) {
             Text("RETURN CASH", color = Color.White, fontWeight = FontWeight.Bold)
+        }
+    }
+
+    @Composable
+    private fun TerminateTransactionButton(viewModel: VendingMachineViewModel) {
+        // Only show the terminate button when a transaction is active
+        if (viewModel.isTransactionActive) {
+            Button(
+                onClick = { viewModel.terminateTransaction() },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Text("TERMINATE TRANSACTION", color = Color.White, fontWeight = FontWeight.Bold)
+            }
         }
     }
 
