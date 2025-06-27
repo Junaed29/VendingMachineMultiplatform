@@ -57,6 +57,10 @@ class VendingMachineViewModel {
         private set
     var isTransactionActive by mutableStateOf(false)
         private set
+    var changeCollected by mutableStateOf(true)
+        private set
+    var drinkCollected by mutableStateOf(true)
+        private set
 
     // Collection of inserted coins
     val insertedCoins = mutableStateListOf<Coin>()
@@ -327,6 +331,10 @@ class VendingMachineViewModel {
         dispensedDrink = drink.name
         changeAmount = change
 
+        // Mark items as not collected yet
+        drinkCollected = false
+        changeCollected = changeAmount == "0.00" // If no change, treat it as collected
+
         // Update inventory
         updateDrinkInventory(drink.name)
         updateCoinInventory()
@@ -334,10 +342,13 @@ class VendingMachineViewModel {
         // Log the transaction
         logTransaction(drink)
 
-        // Reset transaction state
+        // Reset transaction state (but keep collection slots)
         totalInserted = "0.00"
-        uiMessage = "Enjoy your ${drink.name}!"
+        uiMessage = "Enjoy your ${drink.name}! Don't forget to collect it."
         insertedCoins.clear()
+        selectedDrink = null
+        isTransactionActive = false
+        showInvalidCoinMessage = false
     }
 
     /**
@@ -353,6 +364,10 @@ class VendingMachineViewModel {
         dispensedDrink = drink.name
         changeAmount = "0.00"
 
+        // No change to collect, but drink needs to be collected
+        changeCollected = true
+        drinkCollected = false
+
         // Update inventory
         updateDrinkInventory(drink.name)
         updateCoinInventory()
@@ -360,11 +375,35 @@ class VendingMachineViewModel {
         // Log the transaction (note: customer didn't receive change)
         logTransaction(drink, changeGiven = "0.00")
 
-        // Reset transaction state
+        // Reset transaction state (but keep collection slots)
         totalInserted = "0.00"
-        uiMessage = "Enjoy your ${drink.name}!"
+        uiMessage = "Enjoy your ${drink.name}! Don't forget to collect it."
         showChangeNotAvailableDialog = false
         insertedCoins.clear()
+        selectedDrink = null
+        isTransactionActive = false
+    }
+
+    /**
+     * Collect the dispensed drink from the collection slot
+     */
+    fun collectDrink() {
+        if (dispensedDrink.isNotEmpty()) {
+            uiMessage = "You've collected your ${dispensedDrink}. Enjoy!"
+            drinkCollected = true
+            dispensedDrink = ""
+        }
+    }
+
+    /**
+     * Collect the change from the change slot
+     */
+    fun collectChange() {
+        if (changeAmount != "0.00") {
+            uiMessage = "You've collected your change: RM ${changeAmount}"
+            changeCollected = true
+            changeAmount = "0.00"
+        }
     }
 
     /**
@@ -469,7 +508,26 @@ class VendingMachineViewModel {
         }
 
         if (insertedCoins.isNotEmpty()) {
-            changeAmount = totalInserted
+            // If there's already change in the slot, add to it
+            val currentChange = if (changeAmount != "0.00") {
+                try {
+                    changeAmount.toDouble()
+                } catch (e: NumberFormatException) {
+                    0.0
+                }
+            } else 0.0
+
+            val returnedAmount = try {
+                totalInserted.toDouble()
+            } catch (e: NumberFormatException) {
+                0.0
+            }
+
+            // Add the returned cash to any existing change
+            val totalChange = currentChange + returnedAmount
+            changeAmount = vendingMachineService.formatAmount(totalChange)
+            changeCollected = false
+
             uiMessage = "Returning RM $totalInserted"
             totalInserted = "0.00"
             insertedCoins.clear()
@@ -487,7 +545,26 @@ class VendingMachineViewModel {
     fun terminateTransaction() {
         // Return any inserted money
         if (insertedCoins.isNotEmpty()) {
-            changeAmount = totalInserted
+            // If there's already change in the slot, add to it
+            val currentChange = if (changeAmount != "0.00") {
+                try {
+                    changeAmount.toDouble()
+                } catch (e: NumberFormatException) {
+                    0.0
+                }
+            } else 0.0
+
+            val returnedAmount = try {
+                totalInserted.toDouble()
+            } catch (e: NumberFormatException) {
+                0.0
+            }
+
+            // Add the terminated transaction cash to any existing change
+            val totalChange = currentChange + returnedAmount
+            changeAmount = vendingMachineService.formatAmount(totalChange)
+            changeCollected = false
+
             uiMessage = "Transaction terminated. Returning RM $totalInserted"
         } else {
             uiMessage = "Transaction terminated"

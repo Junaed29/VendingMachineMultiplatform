@@ -204,7 +204,8 @@ class VendingMachineScreen : Screen {
                 // Collection slots
                 CollectionSlotsSection(
                     changeAmount = viewModel.changeAmount,
-                    dispensedDrink = viewModel.dispensedDrink
+                    dispensedDrink = viewModel.dispensedDrink,
+                    viewModel = viewModel
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -282,7 +283,8 @@ class VendingMachineScreen : Screen {
             // Collection slots
             CollectionSlotsSection(
                 changeAmount = viewModel.changeAmount,
-                dispensedDrink = viewModel.dispensedDrink
+                dispensedDrink = viewModel.dispensedDrink,
+                viewModel = viewModel
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -409,47 +411,6 @@ class VendingMachineScreen : Screen {
                         .fillMaxWidth()
                         .padding(12.dp),
                     textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-
-    @Composable
-    private fun CoinPhysicalDetails() {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.Black.copy(alpha = 0.7f)
-            ),
-            border = BorderStroke(1.dp, VendingMachineColors.AccentColor)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-            ) {
-                Text(
-                    text = "VIMTO Machine validates coins by physical properties:",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Text(
-                    text = "• Diameter (mm): Must match Malaysian coins ±${CoinRepository.DIAMETER_TOLERANCE_MM}mm",
-                    fontSize = 10.sp,
-                    color = Color.LightGray
-                )
-                Text(
-                    text = "• Thickness (mm): Must match Malaysian coins ±${CoinRepository.THICKNESS_TOLERANCE_MM}mm",
-                    fontSize = 10.sp,
-                    color = Color.LightGray
-                )
-                Text(
-                    text = "• Weight (g): Must match Malaysian coins ±${CoinRepository.WEIGHT_TOLERANCE_G}g",
-                    fontSize = 10.sp,
-                    color = Color.LightGray
                 )
             }
         }
@@ -587,52 +548,74 @@ class VendingMachineScreen : Screen {
     }
 
     @Composable
-    private fun CollectionSlotsSection(changeAmount: String, dispensedDrink: String) {
+    private fun CollectionSlotsSection(
+        changeAmount: String,
+        dispensedDrink: String,
+        viewModel: VendingMachineViewModel
+    ) {
         // Change collection slot
         Text(
-            "COLLECT CHANGE / RETURNED CASH HERE",
+            "COLLECT CHANGE / RETURNED CASH HERE (Click to collect)",
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
 
-        OutlinedTextField(
-            value = if (changeAmount == "0.00") "Empty" else "RM $changeAmount",
-            onValueChange = {},
-            readOnly = true,
+        Card(
+            onClick = { viewModel.collectChange() },
+            enabled = changeAmount != "0.00",
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.Black, RoundedCornerShape(4.dp))
-                .border(2.dp, Color.DarkGray, RoundedCornerShape(4.dp)),
+                .border(
+                    width = if (changeAmount != "0.00") 3.dp else 2.dp,
+                    color = if (changeAmount != "0.00") Color.Yellow else Color.DarkGray,
+                    shape = RoundedCornerShape(4.dp)
+                ),
             shape = MaterialTheme.shapes.medium,
-            colors = TextFieldDefaults.colors(
-                disabledTextColor = VendingMachineColors.DisplayColor,
-                focusedIndicatorColor = Color.DarkGray,
-                unfocusedIndicatorColor = Color.DarkGray,
-            ),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Black
             )
-        )
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = if (changeAmount == "0.00") "Empty" else "RM $changeAmount",
+                    color = VendingMachineColors.DisplayColor,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    fontSize = 18.sp
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Product collection slot - hexagon-shaped for VIMTO style
+        // Product collection slot
         Text(
-            "COLLECT CAN HERE",
+            "COLLECT CAN HERE (Click to collect)",
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
 
-        // Created a simple slot with a diamond-like shape as requested
         Card(
+            onClick = { viewModel.collectDrink() },
+            enabled = dispensedDrink.isNotEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(100.dp)
-                .background(Color.Black),
+                .height(100.dp),
+
             shape = RoundedCornerShape(10.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.Black),
-            border = BorderStroke(2.dp, Color.DarkGray)
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Black
+            ),
+            border = BorderStroke(
+                width = if (dispensedDrink.isNotEmpty()) 3.dp else 2.dp,
+                color = if (dispensedDrink.isNotEmpty()) Color.Green else Color.DarkGray
+            )
         ) {
             Box(
                 contentAlignment = Alignment.Center,

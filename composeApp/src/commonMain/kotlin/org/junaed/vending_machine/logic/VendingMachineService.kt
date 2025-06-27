@@ -86,4 +86,11 @@ class VendingMachineService {
             "0.00"
         }
     }
+
+    /**
+     * Format a double amount to a string with 2 decimal places
+     */
+    fun formatAmount(amount: Double): String {
+        return formatToTwoDecimalPlaces(amount)
+    }
 }
