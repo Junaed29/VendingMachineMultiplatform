@@ -63,7 +63,7 @@ fun DrinkSelectionButton(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = drinkItem.price,
+                        text = "RM ${drinkItem.price}",
                         color = Color(0xFFE74C3C),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
@@ -80,7 +80,7 @@ fun DrinkSelectionButton(
             }
 
             Button(
-                onClick = onClick,
+                onClick = { if (drinkItem.inStock) onClick() },
                 enabled = drinkItem.inStock,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = buttonColor,

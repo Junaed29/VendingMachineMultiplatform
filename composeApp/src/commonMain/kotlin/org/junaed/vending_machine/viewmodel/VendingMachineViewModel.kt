@@ -219,7 +219,7 @@ class VendingMachineViewModel {
                     uiMessage = "You have inserted enough money for ${drink.name}"
                 } else {
                     val remainingAmount = vendingMachineService.calculateChange(drink.price, totalInserted)
-                    uiMessage = "Please insert RM $remainingAmount more"
+                    uiMessage = "Please insert RM $remainingAmount more for ${drink.name}"
                 }
             }
         } else {

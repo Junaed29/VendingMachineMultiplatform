@@ -392,7 +392,7 @@ class VendingMachineScreen : Screen {
                 border = BorderStroke(1.dp, VendingMachineColors.AccentColor)
             ) {
                 Text(
-                    "COIN NOT VALID - ${viewModel.invalidCoinMessage}",
+                    "COIN NOT VALID",
                     color = VendingMachineColors.AccentColor,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
