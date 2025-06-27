@@ -206,6 +206,12 @@ class VendingMachineViewModel {
         // Block operation if in maintenance mode
         if (!checkMaintenanceMode()) return
 
+        // Require drink selection before accepting coins
+        if (selectedDrink == null) {
+            uiMessage = "Please select a drink first before inserting coins"
+            return
+        }
+
         if (vendingMachineService.isValidMalaysianCoin(coin)) {
             // Valid Malaysian coin
             insertedCoins.add(coin)
