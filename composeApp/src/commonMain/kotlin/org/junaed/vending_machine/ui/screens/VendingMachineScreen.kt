@@ -327,66 +327,108 @@ class VendingMachineScreen : Screen {
 
     @Composable
     private fun CoinInsertionSection(viewModel: VendingMachineViewModel) {
-        Text(
-            "INSERT COIN HERE",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            color = Color.White
-        )
-
-        // Malaysian Coin Buttons - Regular coin section
-        Text(
-            "Malaysian Coins:",
-            fontSize = 14.sp,
-            color = Color.White,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-
-        Row(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            colors = CardDefaults.cardColors(
+                containerColor = VendingMachineColors.MachinePanelColor.copy(alpha = 0.9f)
+            ),
+            border = BorderStroke(2.dp, Color.DarkGray),
+            shape = RoundedCornerShape(8.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            CoinRepository.MALAYSIAN_COINS.forEach { coin ->
-                CoinButton(
-                    coin = coin,
-                    colorHex = viewModel.coinColors[coin] ?: "#C0C0C0",
-                    onClick = { viewModel.insertCoin(coin) }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header text with more prominent styling
+                Text(
+                    "INSERT COIN HERE",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp,
+                    color = VendingMachineColors.DisplayColor,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = VendingMachineColors.MachinePanelColor.copy(alpha = 1f),
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = VendingMachineColors.AccentColor,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(vertical = 8.dp)
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Malaysian Coin Buttons - Regular coin section
+                Text(
+                    "Malaysian Coins:",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    CoinRepository.MALAYSIAN_COINS.forEach { coin ->
+                        CoinButton(
+                            coin = coin,
+                            colorHex = viewModel.coinColors[coin] ?: "#C0C0C0",
+                            onClick = { viewModel.insertCoin(coin) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Foreign coin section with divider
+                androidx.compose.material3.Divider(
+                    color = Color.DarkGray,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                Text(
+                    "Foreign Coins (Will Be Rejected):",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Add US Quarter and Euro coin as examples
+                    CoinButton(
+                        coin = CoinRepository.US_QUARTER,
+                        colorHex = viewModel.coinColors[CoinRepository.US_QUARTER] ?: "#C0C0C0",
+                        onClick = { viewModel.insertCoin(CoinRepository.US_QUARTER) }
+                    )
+
+                    CoinButton(
+                        coin = CoinRepository.EURO_1,
+                        colorHex = viewModel.coinColors[CoinRepository.EURO_1] ?: "#DCB950",
+                        onClick = { viewModel.insertCoin(CoinRepository.EURO_1) }
+                    )
+                }
             }
         }
-
-        // Foreign coin section - For demonstration
-        Text(
-            "Foreign Coins (Will Be Rejected):",
-            fontSize = 14.sp,
-            color = Color.White,
-            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            // Add US Quarter and Euro coin as examples
-            CoinButton(
-                coin = CoinRepository.US_QUARTER,
-                colorHex = viewModel.coinColors[CoinRepository.US_QUARTER] ?: "#C0C0C0",
-                onClick = { viewModel.insertCoin(CoinRepository.US_QUARTER) }
-            )
-
-            CoinButton(
-                coin = CoinRepository.EURO_1,
-                colorHex = viewModel.coinColors[CoinRepository.EURO_1] ?: "#DCB950",
-                onClick = { viewModel.insertCoin(CoinRepository.EURO_1) }
-            )
-        }
-
-        // Show coin technical details (educational section)
-        //CoinPhysicalDetails()
 
         // Show invalid coin message only when needed
         AnimatedVisibility(
