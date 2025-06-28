@@ -413,78 +413,110 @@ class MaintenanceScreen : Screen {
 
     @Composable
     private fun CoinManagementSection(viewModel: MaintenanceViewModel) {
+        // State for tracking selected denomination
+        var selectedDenomination by remember { mutableStateOf(10) } // Default to 10 sen
+
         SectionCard(title = "Coin Count") {
             Text(
-                "View coins by denomination and update quantities",
+                "Select a coin denomination to view count",
                 fontSize = 14.sp,
                 color = Color.White,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Coin counts from viewModel
-            viewModel.coinsByDenomination.entries.sortedBy { it.key }.forEach { (denomination, count) ->
-                CoinQuantityRow(
-                    denomination = denomination,
-                    count = count,
-                    onUpdateQuantity = { newQuantity ->
-                        viewModel.updateCoinQuantity(denomination, newQuantity)
-                    }
+            // Radio buttons for denomination selection
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                // 10 Sen radio button
+                CoinRadioButton(
+                    text = "10C",
+                    selected = selectedDenomination == 10,
+                    onClick = { selectedDenomination = 10 }
+                )
+
+                // 20 Sen radio button
+                CoinRadioButton(
+                    text = "20C",
+                    selected = selectedDenomination == 20,
+                    onClick = { selectedDenomination = 20 }
+                )
+
+                // 50 Sen radio button
+                CoinRadioButton(
+                    text = "50C",
+                    selected = selectedDenomination == 50,
+                    onClick = { selectedDenomination = 50 }
+                )
+
+                // 1 Ringgit radio button
+                CoinRadioButton(
+                    text = "RM1",
+                    selected = selectedDenomination == 100,
+                    onClick = { selectedDenomination = 100 }
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Total cash value
+            // Label for the coin count display
             Text(
-                "Total Cash Value: RM ${formatToTwoDecimalPlaces(viewModel.calculateTotalCoinValue())}",
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-        }
-    }
-
-    @Composable
-    private fun CoinQuantityRow(
-        denomination: Int,
-        count: Int,
-        onUpdateQuantity: (Int) -> Boolean
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            val denomText = when(denomination) {
-                10 -> "10 Sen"
-                20 -> "20 Sen"
-                50 -> "50 Sen"
-                100 -> "1 RM"
-                else -> "$denomination Sen"
-            }
-
-            Text(
-                denomText,
+                "TOTAL NUMBER OF COINS IN SELECTED DENOMINATION",
+                fontSize = 14.sp,
                 color = Color.White,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Grey box for displaying the count (fetched from the database via ViewModel)
+            val count = viewModel.coinsByDenomination[selectedDenomination] ?: 0
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .background(
+                        color = Color.LightGray,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = Color.DarkGray,
+                        shape = RoundedCornerShape(8.dp)
+                    ),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "Quantity: $count",
-                    color = Color.White
+                    text = "$count",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
                 )
+            }
 
-                Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                var newValue by remember(denomination) { mutableStateOf("$count") }
-                var showUpdateField by remember(denomination) { mutableStateOf(false) }
+            // Update quantity field for the selected denomination
+            var newValue by remember(selectedDenomination) { mutableStateOf("${count}") }
+            var showUpdateField by remember(selectedDenomination) { mutableStateOf(false) }
 
-                if (showUpdateField) {
-                    // Show number input field
+            if (showUpdateField) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "New Quantity: ",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
+
                     OutlinedTextField(
                         value = newValue,
                         onValueChange = { value ->
@@ -493,7 +525,7 @@ class MaintenanceScreen : Screen {
                             }
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.width(80.dp),
+                        modifier = Modifier.width(100.dp),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
                             unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
@@ -508,7 +540,7 @@ class MaintenanceScreen : Screen {
                     Button(
                         onClick = {
                             val quantity = newValue.toIntOrNull() ?: 0
-                            if (onUpdateQuantity(quantity)) {
+                            if (viewModel.updateCoinQuantity(selectedDenomination, quantity)) {
                                 showUpdateField = false
                             }
                         },
@@ -520,20 +552,60 @@ class MaintenanceScreen : Screen {
                     ) {
                         Text("Save", fontSize = 12.sp)
                     }
-                } else {
-                    // Show update button
+                }
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Button(
                         onClick = { showUpdateField = true },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = VendingMachineColors.ButtonColor
                         ),
-                        shape = RoundedCornerShape(4.dp),
-                        modifier = Modifier.padding(4.dp)
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth(0.6f)
                     ) {
-                        Text("Update", fontSize = 12.sp)
+                        Text("Update Coin Quantity", fontWeight = FontWeight.Medium)
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Total cash value
+            Text(
+                "Total Cash Value: RM ${formatToTwoDecimalPlaces(viewModel.calculateTotalCoinValue())}",
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
+    }
+
+    @Composable
+    private fun CoinRadioButton(
+        text: String,
+        selected: Boolean,
+        onClick: () -> Unit
+    ) {
+        Button(
+            onClick = onClick,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (selected)
+                    VendingMachineColors.AccentColor
+                else
+                    VendingMachineColors.ButtonColor.copy(alpha = 0.6f)
+            ),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .padding(horizontal = 4.dp)
+                .height(40.dp)
+        ) {
+            Text(
+                text = text,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                fontSize = 14.sp
+            )
         }
     }
 
