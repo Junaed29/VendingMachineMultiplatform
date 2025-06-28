@@ -16,7 +16,7 @@ junit = "4.13.2"
 kotlin = "2.1.21"
 kotlinx-coroutines = "1.10.2"
 materialIconsExtended = "1.7.3"
-voyagerVersion = "1.0.1"
+voyagerVersion = "1.1.0-beta03"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
