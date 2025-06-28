@@ -791,7 +791,7 @@ class MaintenanceScreen : Screen {
                 modifier = Modifier.fillMaxWidth(),
                 maxItemsInEachRow = 3,
                 horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.spacedBy(12.dp) // Added spacing between rows
             ) {
                 viewModel.drinkPriceSettings.keys.sorted().forEach { drinkName ->
                     val isSelected = selectedDrink == drinkName
@@ -814,6 +814,19 @@ class MaintenanceScreen : Screen {
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Display the number of cans for the selected brand
+            val canCount = viewModel.drinkStockLevels[selectedDrink] ?: 0
+            Text(
+                text = "TOTAL NUMBER OF CANS IN SELECTED BRAND: $canCount",
+                fontSize = 14.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            )
 
             // Current price display
             val currentPrice = viewModel.drinkPriceSettings[selectedDrink] ?: 0.0

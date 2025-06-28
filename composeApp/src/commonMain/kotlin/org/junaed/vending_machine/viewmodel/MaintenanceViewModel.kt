@@ -304,6 +304,24 @@ class MaintenanceViewModel {
 
         // Update temporary map
         tempDrinkPrices[drinkName] = newPrice
+
+        // Update the actual drinkPriceSettings to reflect changes immediately in the UI
+        drinkPriceSettings = tempDrinkPrices.toMap()
+
+        // Save changes to storage immediately
+        val settings = loadMaintenanceSettingsFromStorage()
+        val updatedSettings = settings.copy(
+            priceSettings = tempDrinkPrices
+        )
+
+        // Persist to storage
+        storageService.saveObject(
+            MAINTENANCE_SETTINGS_KEY,
+            updatedSettings,
+            serializer()
+        )
+
+        maintenanceMessage = "Price updated successfully"
         return true
     }
 
