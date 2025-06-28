@@ -105,8 +105,16 @@ class MaintenanceScreen : Screen {
         val isDesktop = windowSize == WindowSize.EXPANDED
 
         // State variables
-        var isAuthenticated by remember { mutableStateOf(false) }
+        var isAuthenticated by remember { mutableStateOf(viewModel.isMaintenanceMode) }
         var cashDisplay by remember { mutableStateOf("") }
+
+        // Check if already in maintenance mode when screen is shown
+        LaunchedEffect(Unit) {
+            if (viewModel.isMaintenanceMode) {
+                // Already authenticated, no need to show password entry
+                isAuthenticated = true
+            }
+        }
 
         Scaffold(
             topBar = {
