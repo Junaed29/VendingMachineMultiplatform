@@ -106,7 +106,6 @@ class MaintenanceScreen : Screen {
 
         // State variables
         var isAuthenticated by remember { mutableStateOf(false) }
-        var showCashSlot by remember { mutableStateOf(false) }
         var cashDisplay by remember { mutableStateOf("") }
 
         Scaffold(
@@ -152,14 +151,11 @@ class MaintenanceScreen : Screen {
 
                     // Cash collection section
                     CashCollectionSection(
-                        viewModel = viewModel,
                         cashDisplay = cashDisplay,
-                        showCashSlot = showCashSlot,
                         onViewTotalCash = {
                             cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.getTotalCash())
                         },
                         onCollectCash = {
-                            showCashSlot = true
                             cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.collectCash())
                         }
                     )
@@ -824,9 +820,7 @@ class MaintenanceScreen : Screen {
 
     @Composable
     private fun CashCollectionSection(
-        viewModel: MaintenanceViewModel,
         cashDisplay: String,
-        showCashSlot: Boolean,
         onViewTotalCash: () -> Unit,
         onCollectCash: () -> Unit
     ) {
@@ -834,9 +828,19 @@ class MaintenanceScreen : Screen {
         var cashInDispenser by remember { mutableStateOf(false) }
         var dispenserAmount by remember { mutableStateOf("") }
 
+        // Remember the last valid cash amount for collection
+        var lastCashAmount by remember { mutableStateOf("") }
+
         // Ensure dispenser shows as active whenever it contains cash
         LaunchedEffect(dispenserAmount) {
             cashInDispenser = dispenserAmount.isNotEmpty()
+        }
+
+        // Needed to capture any changes in cashDisplay for the collect button
+        LaunchedEffect(cashDisplay) {
+            if (cashDisplay.isNotEmpty()) {
+                lastCashAmount = cashDisplay
+            }
         }
 
         SectionCard(title = "Cash View & Collection") {
@@ -844,9 +848,16 @@ class MaintenanceScreen : Screen {
             Button(
                 onClick = {
                     onViewTotalCash()
-                    // Update UI state
-                    dispenserAmount = cashDisplay
-                    cashInDispenser = false
+                    // Only set dispenserAmount if it's not RM 0.00
+                    if (cashDisplay != "RM 0.00") {
+                        dispenserAmount = cashDisplay
+                    } else {
+                        dispenserAmount = ""
+                    }
+                    // Force dispenser to inactive state for zero amount
+                    if (cashDisplay == "RM 0.00") {
+                        cashInDispenser = false
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
@@ -882,6 +893,7 @@ class MaintenanceScreen : Screen {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
+                        // Using the most current cashDisplay value
                         text = cashDisplay,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
@@ -895,10 +907,19 @@ class MaintenanceScreen : Screen {
             // Collect All Cash Button
             Button(
                 onClick = {
+                    // Capture the current cash display before collecting
+                    if (cashDisplay.isNotEmpty() && cashDisplay != "RM 0.00") {
+                        lastCashAmount = cashDisplay
+                    }
+
+                    // Call the collect cash function
                     onCollectCash()
-                    // Update UI state for dispenser
-                    dispenserAmount = cashDisplay
-                    cashInDispenser = true
+
+                    // Use the last known cash amount if available, otherwise use current display
+                    if (lastCashAmount.isNotEmpty() && lastCashAmount != "RM 0.00") {
+                        dispenserAmount = lastCashAmount
+                        cashInDispenser = true
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
@@ -907,7 +928,7 @@ class MaintenanceScreen : Screen {
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
-                    "PRESS HERE TO COLLECT ALL CASH",
+                    "TRANSFER CASH TO DISPENSER",
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
@@ -944,9 +965,15 @@ class MaintenanceScreen : Screen {
                     .then(
                         if (cashInDispenser) {
                             Modifier.clickable {
+                                // Execute the actual cash collection
+                                onCollectCash()
+
                                 // Clear the dispenser (simulating cash being taken)
                                 cashInDispenser = false
                                 dispenserAmount = ""
+
+                                // Refresh the cash display to show the new total (which should be 0)
+                                onViewTotalCash()
                             }
                         } else {
                             Modifier
@@ -961,7 +988,7 @@ class MaintenanceScreen : Screen {
                     // Show the dispenser amount when cash is collected
                     if (cashInDispenser && dispenserAmount.isNotEmpty() ) {
                         Text(
-                            text = dispenserAmount,
+                            text = dispenserAmount, // Using dispenserAmount instead of cashDisplay
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
