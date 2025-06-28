@@ -120,7 +120,8 @@ class MaintenanceScreen : Screen {
             topBar = {
                 MaintenanceTopAppBar(
                     onBackClick = {
-                        viewModel.clearAuthentication()
+                       // Uncomment to require re-authentication when returning to this screen
+                       // viewModel.clearAuthentication()
                         navigator?.pop()
                     }
                 )
@@ -193,7 +194,8 @@ class MaintenanceScreen : Screen {
             title = { Text("Maintainer Panel", fontWeight = FontWeight.Bold) },
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back",
+                        tint = Color.White)
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
