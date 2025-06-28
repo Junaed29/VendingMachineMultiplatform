@@ -385,6 +385,28 @@ class MaintenanceViewModel {
         return true
     }
 
+    /**
+     * Update the quantity of a specific drink brand
+     */
+    fun updateDrinkQuantity(brand: String, quantity: Int) {
+        // Update temp storage
+        tempDrinkStockLevels[brand] = quantity
+
+        // Update the visible state immediately for UI feedback
+        drinkStockLevels = tempDrinkStockLevels.toMap()
+
+        // Save changes to persistent storage
+        val settings = loadMaintenanceSettingsFromStorage()
+        val updatedSettings = settings.copy(
+            drinkStockLevels = tempDrinkStockLevels.toMap()
+        )
+        storageService.saveObject(
+            MAINTENANCE_SETTINGS_KEY,
+            updatedSettings,
+            serializer()
+        )
+    }
+
     //----------------------------------------------------------------------------------------------
     // CASH MANAGEMENT METHODS
     //----------------------------------------------------------------------------------------------

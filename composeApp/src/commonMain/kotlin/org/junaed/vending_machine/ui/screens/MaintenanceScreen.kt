@@ -144,13 +144,8 @@ class MaintenanceScreen : Screen {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Drink inventory section
-                    DrinkInventorySection(viewModel = viewModel)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Price update section
-                    PriceUpdateSection(viewModel = viewModel)
+                    // Drink inventory and price management section
+                    DrinkInventoryAndPriceSection(viewModel = viewModel)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -551,17 +546,21 @@ class MaintenanceScreen : Screen {
     }
 
     //----------------------------------------------------------------------------------------------
-    // DRINK INVENTORY SECTION
+    // DRINK INVENTORY AND PRICE SECTION (COMBINED)
     //----------------------------------------------------------------------------------------------
 
     @Composable
-    private fun DrinkInventorySection(viewModel: MaintenanceViewModel) {
+    private fun DrinkInventoryAndPriceSection(viewModel: MaintenanceViewModel) {
         // State for tracking selected brand
         var selectedBrand by remember { mutableStateOf("BRAND 1") } // Default to BRAND 1
+        var newPrice by remember { mutableStateOf("") }
 
-        SectionCard(title = "Drink Inventory") {
+        // Get the current inventory count
+        val count = viewModel.drinkStockLevels[selectedBrand] ?: 0
+
+        SectionCard(title = "Drink Inventory & Price Management") {
             Text(
-                "Select a drink brand to view count",
+                "Select a drink brand to manage inventory and pricing",
                 fontSize = 14.sp,
                 color = Color.White,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -601,7 +600,6 @@ class MaintenanceScreen : Screen {
             Spacer(modifier = Modifier.height(8.dp))
 
             // Grey box for displaying the count (fetched from the database via ViewModel)
-            val count = viewModel.drinkStockLevels[selectedBrand] ?: 0
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -625,20 +623,19 @@ class MaintenanceScreen : Screen {
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            /*
-            // Update quantity field for the selected brand
+            // Quantity update field for selected brand
             DrinkQuantityUpdateField(
                 selectedBrand = selectedBrand,
                 currentCount = count,
                 onUpdateQuantity = { newQuantity ->
-                    viewModel.updateDrinkStock(selectedBrand, newQuantity)
+                    viewModel.updateDrinkQuantity(selectedBrand, newQuantity)
+                    true
                 }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-             */
 
             // Total drinks
             Text(
@@ -646,6 +643,69 @@ class MaintenanceScreen : Screen {
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Price management section
+            Text(
+                "PRICE MANAGEMENT",
+                fontSize = 14.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            )
+
+            // Current price display
+            val currentPrice = viewModel.drinkPriceSettings[selectedBrand] ?: 0.0
+            Text(
+                "Current Price: RM ${formatToTwoDecimalPlaces(currentPrice)}",
+                color = VendingMachineColors.DisplayColor,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            // New price input
+            OutlinedTextField(
+                value = newPrice,
+                onValueChange = { input ->
+                    // Only accept valid decimal numbers
+                    if (input.isEmpty() || input.matches(Regex("^\\d*\\.?\\d{0,2}$"))) {
+                        newPrice = input
+                    }
+                },
+                label = { Text("New Price (RM)", color = Color.White) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                    unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    cursorColor = Color.White
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    // Update price logic with validation
+                    newPrice.toDoubleOrNull()?.let { price ->
+                        if (price > 0) {
+                            viewModel.updateDrinkPrice(selectedBrand, price)
+                            newPrice = ""
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = VendingMachineColors.ButtonColor
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("UPDATE PRICE", fontWeight = FontWeight.Bold)
+            }
         }
     }
 
@@ -676,15 +736,19 @@ class MaintenanceScreen : Screen {
         }
     }
 
+    //----------------------------------------------------------------------------------------------
+    // COIN QUANTITY UPDATE FIELD
+    //----------------------------------------------------------------------------------------------
+
     @Composable
-    private fun DrinkQuantityUpdateField(
-        selectedBrand: String,
+    private fun CoinQuantityUpdateField(
+        selectedDenomination: Int,
         currentCount: Int,
         onUpdateQuantity: (Int) -> Boolean
     ) {
         // State variables for the update field
-        var newValue by remember(selectedBrand) { mutableStateOf("$currentCount") }
-        var showUpdateField by remember(selectedBrand) { mutableStateOf(false) }
+        var newValue by remember(selectedDenomination) { mutableStateOf("$currentCount") }
+        var showUpdateField by remember(selectedDenomination) { mutableStateOf(false) }
 
         if (showUpdateField) {
             Row(
@@ -747,136 +811,8 @@ class MaintenanceScreen : Screen {
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(0.6f)
                 ) {
-                    Text("Update Can Quantity", fontWeight = FontWeight.Medium)
+                    Text("Update Coin Quantity", fontWeight = FontWeight.Medium)
                 }
-            }
-        }
-    }
-
-    //----------------------------------------------------------------------------------------------
-    // PRICE UPDATE SECTION
-    //----------------------------------------------------------------------------------------------
-
-    @Composable
-    private fun PriceUpdateSection(viewModel: MaintenanceViewModel) {
-        var selectedDrink by remember { mutableStateOf(viewModel.drinkPriceSettings.keys.firstOrNull() ?: "BRAND 1") }
-        var newPrice by remember { mutableStateOf("") }
-
-        SectionCard(title = "Price Update") {
-            Text(
-                "Select a drink and enter a new price",
-                fontSize = 14.sp,
-                color = Color.White,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            // Drink selector
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Selected Drink:",
-                    color = Color.White,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-            }
-
-            // Drink selection buttons in FlowRow for wrapping on small screens
-            androidx.compose.foundation.layout.FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                maxItemsInEachRow = 3,
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalArrangement = Arrangement.spacedBy(12.dp) // Added spacing between rows
-            ) {
-                viewModel.drinkPriceSettings.keys.sorted().forEach { drinkName ->
-                    val isSelected = selectedDrink == drinkName
-                    Button(
-                        onClick = { selectedDrink = drinkName },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isSelected)
-                                VendingMachineColors.AccentColor
-                            else
-                                VendingMachineColors.ButtonColor.copy(alpha = 0.6f)
-                        ),
-                        shape = RoundedCornerShape(4.dp),
-                        modifier = Modifier.padding(horizontal = 2.dp)
-                    ) {
-                        Text(
-                            drinkName,
-                            fontSize = 12.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Display the number of cans for the selected brand
-            val canCount = viewModel.drinkStockLevels[selectedDrink] ?: 0
-            Text(
-                text = "TOTAL NUMBER OF CANS IN SELECTED BRAND: $canCount",
-                fontSize = 14.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-            )
-
-            // Current price display
-            val currentPrice = viewModel.drinkPriceSettings[selectedDrink] ?: 0.0
-            Text(
-                "Current Price: RM ${formatToTwoDecimalPlaces(currentPrice)}",
-                color = VendingMachineColors.DisplayColor,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            // New price input
-            OutlinedTextField(
-                value = newPrice,
-                onValueChange = { input ->
-                    // Only accept valid decimal numbers
-                    if (input.isEmpty() || input.matches(Regex("^\\d*\\.?\\d{0,2}$"))) {
-                        newPrice = input
-                    }
-                },
-                label = { Text("New Price (RM)", color = Color.White) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                    unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color.White
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    // Update price logic with validation
-                    newPrice.toDoubleOrNull()?.let { price ->
-                        if (price > 0) {
-                            viewModel.updateDrinkPrice(selectedDrink, price)
-                            newPrice = ""
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = VendingMachineColors.ButtonColor
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("UPDATE PRICE", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -989,18 +925,18 @@ class MaintenanceScreen : Screen {
     }
 
     //----------------------------------------------------------------------------------------------
-    // COIN QUANTITY UPDATE FIELD
+    // DRINK QUANTITY UPDATE FIELD
     //----------------------------------------------------------------------------------------------
 
     @Composable
-    private fun CoinQuantityUpdateField(
-        selectedDenomination: Int,
+    private fun DrinkQuantityUpdateField(
+        selectedBrand: String,
         currentCount: Int,
         onUpdateQuantity: (Int) -> Boolean
     ) {
         // State variables for the update field
-        var newValue by remember(selectedDenomination) { mutableStateOf("$currentCount") }
-        var showUpdateField by remember(selectedDenomination) { mutableStateOf(false) }
+        var newValue by remember(selectedBrand) { mutableStateOf("$currentCount") }
+        var showUpdateField by remember(selectedBrand) { mutableStateOf(false) }
 
         if (showUpdateField) {
             Row(
@@ -1037,7 +973,7 @@ class MaintenanceScreen : Screen {
                 Button(
                     onClick = {
                         val quantity = newValue.toIntOrNull() ?: 0
-                        if (onUpdateQuantity(quantity)) {
+                        if (quantity >= 0 && onUpdateQuantity(quantity)) {
                             showUpdateField = false
                         }
                     },
@@ -1063,7 +999,7 @@ class MaintenanceScreen : Screen {
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(0.6f)
                 ) {
-                    Text("Update Coin Quantity", fontWeight = FontWeight.Medium)
+                    Text("Update Drink Quantity", fontWeight = FontWeight.Medium)
                 }
             }
         }
