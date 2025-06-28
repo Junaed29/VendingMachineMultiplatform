@@ -1,6 +1,6 @@
 # VIMTO Vending Machine Multiplatform
 
-A comprehensive Kotlin Multiplatform application that simulates a vending machine system across Android, iOS, and Desktop platforms. The application simulates the operations of a soft drinks dispenser with full purchasing, maintenance, and simulation capabilities.
+A comprehensive Kotlin Multiplatform application that simulates a vending machine system across Android, iOS, Desktop, and Web platforms. The application simulates the operations of a soft drinks dispenser with full purchasing, maintenance, and simulation capabilities.
 
 ## Project Overview
 
@@ -13,7 +13,7 @@ This vending machine application allows users to:
 
 ## Technology Stack
 
-- **Kotlin Multiplatform**: Shared codebase for Android, iOS, and Desktop
+- **Kotlin Multiplatform**: Shared codebase for Android, iOS, Desktop, and Web
 - **Jetpack Compose**: Modern declarative UI toolkit for all platforms
 - **Voyager**: Navigation library for Compose Multiplatform
 - **Kotlinx Serialization**: Cross-platform JSON serialization
@@ -22,98 +22,133 @@ This vending machine application allows users to:
 
 ## Project Structure
 
-### `/composeApp` Directory
+```
+VendingMachineMultiplatform/
+├── build.gradle.kts                // Root build configuration
+├── gradle.properties               // Gradle and project properties
+├── settings.gradle.kts             // Project settings and module config
+├── composeApp/                     // Main multiplatform module
+│   ├── build.gradle.kts            // Module build configuration
+│   └── src/                        // Source code directory
+│       ├── commonMain/             // Shared code for all platforms
+│       │   ├── kotlin/org/junaed/vending_machine/
+│       │   │   ├── model/          // Data models
+│       │   │   ├── viewmodel/      // ViewModels for UI state/logic
+│       │   │   ├── logic/          // Business logic
+│       │   │   └── ui/             // UI components
+│       │   │       ├── components/ // Reusable UI components
+│       │   │       ├── screens/    // Full application screens
+│       │   │       ├── theme/      // Theme definitions
+│       │   │       └── utils/      // UI utility classes
+│       ├── androidMain/            // Android-specific code
+│       ├── iosMain/                // iOS-specific code
+│       ├── desktopMain/            // Desktop-specific code
+│       └── wasmJsMain/             // Web/WASM-specific code
+├── iosApp/                         // iOS application wrapper
+│   ├── Configuration/              // iOS configuration
+│   └── iosApp/                     // iOS app entry point
+└── gradle/                         // Gradle configuration
+    └── libs.versions.toml          // Dependencies version catalog
+```
 
-Contains the shared code for all platforms with the following key directories:
+## Component Responsibilities
 
-#### `/src/commonMain`
+### Models (`model/`)
+- `Coin.kt`: Data model for coins with physical properties (diameter, thickness, weight)
+- `DrinkItem.kt`: Data model for drinks available in the vending machine
+- `Transaction.kt`: Data model for tracking vending machine transactions
+- `MaintenanceSettings.kt`: Settings for the vending machine maintenance
 
-Shared code across all platforms:
+### ViewModels (`viewmodel/`)
+- `VendingMachineViewModel.kt`: Manages state and business logic for vending machine operations
+- `MaintenanceViewModel.kt`: Handles maintenance operations and settings
 
-- **Model Package** (`org.junaed.vending_machine.model`):
-  - `Coin.kt` - Data model for coins with physical properties (diameter, thickness, weight)
-  - `DrinkItem.kt` - Data model for drinks available in the vending machine
-  - `Transaction.kt` - Data model for tracking vending machine transactions
-  - `MaintenanceSettings.kt` - Settings for the vending machine maintenance
+### Business Logic (`logic/`)
+- `CoinRepository.kt`: Handles coin validation based on physical properties
+- `SettingsFactory.kt`: Platform-specific settings implementations
+- Platform-specific settings factories:
+  - `AndroidSettingsFactory.kt`
+  - `IOSSettingsFactory.kt`
+  - `DesktopSettingsFactory.kt`
+  - `WasmJsSettingsFactory.kt`
 
-- **ViewModel Package** (`org.junaed.vending_machine.viewmodel`):
-  - `VendingMachineViewModel.kt` - Manages state and business logic for the vending machine operations
-  - `MaintenanceViewModel.kt` - Manages maintenance operations and settings
+### UI Components (`ui/`)
+- **Screens**:
+  - `MainMenuScreen.kt`: Entry point with navigation to other screens
+  - `VendingMachineScreen.kt`: Main interface for purchasing drinks
+  - `MaintenanceScreen.kt`: Interface for maintenance operations
+  - `SimulatorScreen.kt`: Simulates vending machine operations
+- **Reusable Components**:
+  - `CoinButton.kt`: UI component for coin insertion
+  - `DrinkSelectionButton.kt`: UI component for selecting drinks
+- **Theme**:
+  - `VendingMachineTheme.kt`: Theme and styling for the application
 
-- **Logic Package** (`org.junaed.vending_machine.logic`):
-  - `CoinRepository.kt` - Handles coin validation and identification based on physical properties
-  - `VendingMachineService.kt` - Core business logic for vending machine operations
-  - `StorageService.kt` - Persistent storage for transactions and settings
-  - `SettingsFactory.kt` - Platform-specific settings implementation
+### Platform Entry Points
+- `App.kt`: Root composable with navigation setup
+- Android: `MainActivity.kt` and `VendingMachineApp.kt`
+- iOS: Integration through `iosApp/iosApp/iOSApp.swift`
+- Desktop: `desktopMain/main.kt`
+- Web/WASM: `wasmJsMain/main.kt`
 
-- **UI Package** (`org.junaed.vending_machine.ui`):
-  - **Screens** (`screens` subpackage):
-    - `MainMenuScreen.kt` - Entry point with navigation to other screens
-    - `VendingMachineScreen.kt` - Main interface for purchasing drinks
-    - `MaintenanceScreen.kt` - Interface for maintenance operations
-    - `SimulatorScreen.kt` - Simulates vending machine operations
-  
-  - **Components** (`components` subpackage):
-    - `CoinButton.kt` - UI component for coin insertion
-    - `DrinkSelectionButton.kt` - UI component for selecting drinks
-
-  - **Theme** (`theme` subpackage):
-    - `VendingMachineTheme.kt` - Theme and styling for the application
-
-- **App.kt** - Root composable that sets up the application's theme and navigation
-
-#### Platform-Specific Directories
-
-- `/src/androidMain` - Android-specific implementations
-- `/src/iosMain` - iOS-specific implementations
-- `/src/desktopMain` - Desktop-specific implementations
-
-### `/iosApp` Directory
-
-Contains iOS application entry point and configuration:
-- `iosApp.swift` - Swift entry point for the iOS application
-- `ContentView.swift` - SwiftUI wrapper for Compose UI
-
-## Core Features
-
-### Vending Machine Operations
-- Coin insertion and validation based on Malaysian specifications
-- Drink selection with inventory management
-- Change calculation and dispensing
-- Transaction recording
-
-### Maintenance Mode
-- Inventory management (add/remove drinks)
-- Price configuration
-- Available change management
-- Transaction history viewing
-
-### Simulator Mode
-- Simulates real-world vending machine usage scenarios
-- Testing different operational conditions
-
-## Building and Running
+## How to Run/Build
 
 ### Android
-```
+```bash
+# Build debug APK
 ./gradlew :composeApp:assembleDebug
+
+# Install on connected device
+./gradlew :composeApp:installDebug
+
+# Run with Android Studio
+# Open project and run 'composeApp' configuration
 ```
 
 ### iOS
-Open the Xcode project in the iosApp directory and run from there, or use:
-```
-./gradlew :composeApp:iosDeployIphoneDebug
+```bash
+# Generate Xcode project
+./gradlew :composeApp:podInstall
+
+# Open the project in Xcode
+open iosApp/iosApp.xcodeproj
+
+# Build and run from Xcode on simulator or device
 ```
 
 ### Desktop
-```
+```bash
+# Run the desktop application
 ./gradlew :composeApp:run
+
+# Package for distribution
+./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-## Development and Contributions
+### Web/WASM
+```bash
+# Run development server
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun
 
-This project demonstrates how to build a multiplatform application with shared business logic and UI using Kotlin and Compose. The architecture follows MVVM (Model-View-ViewModel) pattern with clear separation of concerns.
+# Build for production
+./gradlew :composeApp:wasmJsBrowserProductionWebpack
+```
 
-## License
+## Special Setup Notes
 
-© 2025 VIMTO Soft Drinks Ltd
+1. **Environment Requirements**:
+   - JDK 11 or newer
+   - Android SDK installed and configured
+   - For iOS builds: macOS with Xcode 14+ and CocoaPods
+   - For web builds: Node.js and npm
+
+2. **First-time Setup**:
+   ```bash
+   # Initialize the project
+   ./gradlew build
+   ```
+
+3. **Generated Files**:
+   - `local.properties`: Automatically created, contains path to Android SDK
+   - `build/` directory: Contains compiled code and resources
+   - `kotlin-js-store/`: Contains JavaScript-related dependencies
