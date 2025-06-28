@@ -556,26 +556,89 @@ class MaintenanceScreen : Screen {
 
     @Composable
     private fun DrinkInventorySection(viewModel: MaintenanceViewModel) {
+        // State for tracking selected brand
+        var selectedBrand by remember { mutableStateOf("BRAND 1") } // Default to BRAND 1
+
         SectionCard(title = "Drink Inventory") {
             Text(
-                "View and update drink inventory levels",
+                "Select a drink brand to view count",
                 fontSize = 14.sp,
                 color = Color.White,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Drink inventory from viewModel
-            viewModel.drinkStockLevels.entries.sortedBy { it.key }.forEach { (drinkName, count) ->
-                DrinkQuantityRow(
-                    drinkName = drinkName,
-                    count = count,
-                    onUpdateQuantity = { newQuantity ->
-                        viewModel.updateDrinkStock(drinkName, newQuantity)
-                    }
-                )
+            // Using FlowRow to automatically wrap buttons to multiple lines on smaller screens
+            androidx.compose.foundation.layout.FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                maxItemsInEachRow = 3,
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalArrangement = Arrangement.spacedBy(12.dp) // Added spacing between rows
+            ) {
+                // Create radio buttons for each brand
+                viewModel.drinkStockLevels.keys.sorted().forEach { brand ->
+                    DrinkRadioButton(
+                        text = brand,
+                        selected = selectedBrand == brand,
+                        onClick = { selectedBrand = brand }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Label for the can count display
+            Text(
+                "TOTAL NUMBER OF CANS IN SELECTED BRAND",
+                fontSize = 14.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Grey box for displaying the count (fetched from the database via ViewModel)
+            val count = viewModel.drinkStockLevels[selectedBrand] ?: 0
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .background(
+                        color = Color.LightGray,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = Color.DarkGray,
+                        shape = RoundedCornerShape(8.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "$count",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            /*
+            // Update quantity field for the selected brand
+            DrinkQuantityUpdateField(
+                selectedBrand = selectedBrand,
+                currentCount = count,
+                onUpdateQuantity = { newQuantity ->
+                    viewModel.updateDrinkStock(selectedBrand, newQuantity)
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+             */
 
             // Total drinks
             Text(
@@ -587,86 +650,104 @@ class MaintenanceScreen : Screen {
     }
 
     @Composable
-    private fun DrinkQuantityRow(
-        drinkName: String,
-        count: Int,
-        onUpdateQuantity: (Int) -> Boolean
+    private fun DrinkRadioButton(
+        text: String,
+        selected: Boolean,
+        onClick: () -> Unit
     ) {
-        Row(
+        Button(
+            onClick = onClick,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (selected)
+                    VendingMachineColors.AccentColor
+                else
+                    VendingMachineColors.ButtonColor.copy(alpha = 0.6f)
+            ),
+            shape = RoundedCornerShape(8.dp),
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 2.dp)
+                .height(40.dp)
         ) {
             Text(
-                drinkName,
-                color = Color.White,
-                fontWeight = FontWeight.Medium
+                text = text,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                fontSize = 14.sp
             )
+        }
+    }
 
+    @Composable
+    private fun DrinkQuantityUpdateField(
+        selectedBrand: String,
+        currentCount: Int,
+        onUpdateQuantity: (Int) -> Boolean
+    ) {
+        // State variables for the update field
+        var newValue by remember(selectedBrand) { mutableStateOf("$currentCount") }
+        var showUpdateField by remember(selectedBrand) { mutableStateOf(false) }
+
+        if (showUpdateField) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Quantity: $count",
-                    color = Color.White
+                    "New Quantity: ",
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
+                )
+
+                OutlinedTextField(
+                    value = newValue,
+                    onValueChange = { value ->
+                        if (value.isEmpty() || value.all { it.isDigit() }) {
+                            newValue = value
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.width(100.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                        unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    singleLine = true
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                var newValue by remember(drinkName) { mutableStateOf("$count") }
-                var showUpdateField by remember(drinkName) { mutableStateOf(false) }
-
-                if (showUpdateField) {
-                    // Show number input field
-                    OutlinedTextField(
-                        value = newValue,
-                        onValueChange = { value ->
-                            if (value.isEmpty() || value.all { it.isDigit() }) {
-                                newValue = value
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.width(80.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                            unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        ),
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Button(
-                        onClick = {
-                            val quantity = newValue.toIntOrNull() ?: 0
-                            if (onUpdateQuantity(quantity)) {
-                                showUpdateField = false
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = VendingMachineColors.ButtonColor
-                        ),
-                        shape = RoundedCornerShape(4.dp),
-                        modifier = Modifier.padding(4.dp)
-                    ) {
-                        Text("Save", fontSize = 12.sp)
-                    }
-                } else {
-                    // Show update button
-                    Button(
-                        onClick = { showUpdateField = true },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = VendingMachineColors.ButtonColor
-                        ),
-                        shape = RoundedCornerShape(4.dp),
-                        modifier = Modifier.padding(4.dp)
-                    ) {
-                        Text("Update", fontSize = 12.sp)
-                    }
+                Button(
+                    onClick = {
+                        val quantity = newValue.toIntOrNull() ?: 0
+                        if (onUpdateQuantity(quantity)) {
+                            showUpdateField = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VendingMachineColors.ButtonColor
+                    ),
+                    shape = RoundedCornerShape(4.dp),
+                    modifier = Modifier.padding(4.dp)
+                ) {
+                    Text("Save", fontSize = 12.sp)
+                }
+            }
+        } else {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Button(
+                    onClick = { showUpdateField = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VendingMachineColors.ButtonColor
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth(0.6f)
+                ) {
+                    Text("Update Can Quantity", fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -694,37 +775,42 @@ class MaintenanceScreen : Screen {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     "Selected Drink:",
                     color = Color.White,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(end = 8.dp)
                 )
+            }
 
-                // Drink selection buttons
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    viewModel.drinkPriceSettings.keys.sorted().forEach { drinkName ->
-                        val isSelected = selectedDrink == drinkName
-                        Button(
-                            onClick = { selectedDrink = drinkName },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSelected)
-                                    VendingMachineColors.AccentColor
-                                else
-                                    VendingMachineColors.ButtonColor.copy(alpha = 0.6f)
-                            ),
-                            shape = RoundedCornerShape(4.dp),
-                            modifier = Modifier.padding(horizontal = 2.dp)
-                        ) {
-                            Text(
-                                drinkName.replace("BRAND ", "B"),
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
+            // Drink selection buttons in FlowRow for wrapping on small screens
+            androidx.compose.foundation.layout.FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                maxItemsInEachRow = 3,
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalArrangement = Arrangement.Center
+            ) {
+                viewModel.drinkPriceSettings.keys.sorted().forEach { drinkName ->
+                    val isSelected = selectedDrink == drinkName
+                    Button(
+                        onClick = { selectedDrink = drinkName },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isSelected)
+                                VendingMachineColors.AccentColor
+                            else
+                                VendingMachineColors.ButtonColor.copy(alpha = 0.6f)
+                        ),
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.padding(horizontal = 2.dp)
+                    ) {
+                        Text(
+                            drinkName,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
                     }
                 }
             }

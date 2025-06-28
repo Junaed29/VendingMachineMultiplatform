@@ -319,6 +319,24 @@ class MaintenanceViewModel {
 
         // Update temporary map
         tempDrinkStockLevels[drinkName] = newQuantity
+
+        // Update the actual drinkStockLevels to reflect changes immediately in the UI
+        drinkStockLevels = tempDrinkStockLevels.toMap()
+
+        // Save changes to storage immediately
+        val settings = loadMaintenanceSettingsFromStorage()
+        val updatedSettings = settings.copy(
+            drinkStockLevels = tempDrinkStockLevels
+        )
+
+        // Persist to storage
+        storageService.saveObject(
+            MAINTENANCE_SETTINGS_KEY,
+            updatedSettings,
+            serializer()
+        )
+
+        maintenanceMessage = "Can quantity updated successfully"
         return true
     }
 
