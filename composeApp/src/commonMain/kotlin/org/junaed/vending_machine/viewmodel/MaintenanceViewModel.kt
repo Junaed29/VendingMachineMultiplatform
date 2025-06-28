@@ -16,7 +16,9 @@ import org.junaed.vending_machine.model.Transaction
 class MaintenanceViewModel {
     private val storageService = StorageService(getSettingsFactory().createSettings())
 
-    // Constants for storage keys
+    //----------------------------------------------------------------------------------------------
+    // CONSTANTS
+    //----------------------------------------------------------------------------------------------
     companion object {
         const val MAINTENANCE_SETTINGS_KEY = "maintenance_settings"
         const val TRANSACTIONS_KEY = "transactions"
@@ -24,7 +26,9 @@ class MaintenanceViewModel {
         const val PASSWORD_MIN_LENGTH = 6
     }
 
-    // UI states
+    //----------------------------------------------------------------------------------------------
+    // UI STATE PROPERTIES
+    //----------------------------------------------------------------------------------------------
     var isPasswordValid by mutableStateOf(false)
         private set
     var showInvalidPasswordMessage by mutableStateOf(false)
@@ -36,7 +40,9 @@ class MaintenanceViewModel {
     var isDoorUnlocked by mutableStateOf(false)
         private set
 
-    // Data states
+    //----------------------------------------------------------------------------------------------
+    // DATA STATE PROPERTIES
+    //----------------------------------------------------------------------------------------------
     var coinsByDenomination by mutableStateOf<Map<Int, Int>>(mapOf())
         private set
     var drinkStockLevels by mutableStateOf<Map<String, Int>>(mapOf())
@@ -44,7 +50,9 @@ class MaintenanceViewModel {
     var drinkPriceSettings by mutableStateOf<Map<String, Double>>(mapOf())
         private set
 
-    // Temporary states for updates
+    //----------------------------------------------------------------------------------------------
+    // TEMPORARY EDIT STATE PROPERTIES
+    //----------------------------------------------------------------------------------------------
     var tempDrinkStockLevels by mutableStateOf<MutableMap<String, Int>>(mutableMapOf())
         private set
     var tempDrinkPrices by mutableStateOf<MutableMap<String, Double>>(mutableMapOf())
@@ -56,6 +64,10 @@ class MaintenanceViewModel {
         loadMaintenanceSettings()
         loadCoinInventory()
     }
+
+    //----------------------------------------------------------------------------------------------
+    // AUTHENTICATION MANAGEMENT
+    //----------------------------------------------------------------------------------------------
 
     /**
      * Validates the password for maintenance access
@@ -84,6 +96,19 @@ class MaintenanceViewModel {
         val regex = "^[a-zA-Z0-9]{6}$".toRegex()
         return regex.matches(password)
     }
+
+    /**
+     * Clear authentication state and exit maintenance mode
+     */
+    fun clearAuthentication() {
+        exitMaintenanceMode()
+        isPasswordValid = false
+        showInvalidPasswordMessage = false
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // MAINTENANCE MODE MANAGEMENT
+    //----------------------------------------------------------------------------------------------
 
     /**
      * Enter maintenance mode - activate maintenance mode and unlock door
@@ -137,6 +162,24 @@ class MaintenanceViewModel {
         maintenanceMessage = ""
         isDoorUnlocked = false
     }
+
+    /**
+     * Record maintenance actions before exiting
+     */
+    fun recordMaintenance() {
+        // Save all changes before exiting
+        saveChanges()
+
+        // Log the maintenance action
+        logMaintenanceAction("Maintenance completed")
+
+        // Exit maintenance mode
+        exitMaintenanceMode()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // DATA LOADING METHODS
+    //----------------------------------------------------------------------------------------------
 
     /**
      * Load maintenance settings from storage
@@ -245,44 +288,9 @@ class MaintenanceViewModel {
         tempCoinLevels = coinsByDenomination.toMutableMap()
     }
 
-    /**
-     * Get the total value of all coins in the machine
-     */
-    fun calculateTotalCoinValue(): Double {
-        var totalValueInSen = 0
-
-        coinsByDenomination.forEach { (denomination, count) ->
-            totalValueInSen += denomination * count
-        }
-
-        return totalValueInSen / 100.0
-    }
-
-    /**
-     * Collect all coins (reset coin storage to zero)
-     */
-    fun collectAllCoins(): Double {
-        val totalValue = calculateTotalCoinValue()
-
-        // Reset coin inventory
-        val emptyCoinInventory = coinsByDenomination.keys.associateWith { 0 }
-
-        // Save to storage
-        storageService.saveObject(
-            AVAILABLE_CHANGE_KEY,
-            emptyCoinInventory,
-            serializer()
-        )
-
-        // Update local state
-        coinsByDenomination = emptyCoinInventory
-        tempCoinLevels = emptyCoinInventory.toMutableMap()
-
-        // Log the maintenance action
-        logMaintenanceAction("Collected all coins: RM $totalValue")
-
-        return totalValue
-    }
+    //----------------------------------------------------------------------------------------------
+    // INVENTORY MANAGEMENT METHODS
+    //----------------------------------------------------------------------------------------------
 
     /**
      * Update drink price
@@ -328,6 +336,67 @@ class MaintenanceViewModel {
         tempCoinLevels[denomination] = newQuantity
         return true
     }
+
+    //----------------------------------------------------------------------------------------------
+    // CASH MANAGEMENT METHODS
+    //----------------------------------------------------------------------------------------------
+
+    /**
+     * Get the total value of all coins in the machine
+     */
+    fun calculateTotalCoinValue(): Double {
+        var totalValueInSen = 0
+
+        coinsByDenomination.forEach { (denomination, count) ->
+            totalValueInSen += denomination * count
+        }
+
+        return totalValueInSen / 100.0
+    }
+
+    /**
+     * Collect all coins (reset coin storage to zero)
+     */
+    fun collectAllCoins(): Double {
+        val totalValue = calculateTotalCoinValue()
+
+        // Reset coin inventory
+        val emptyCoinInventory = coinsByDenomination.keys.associateWith { 0 }
+
+        // Save to storage
+        storageService.saveObject(
+            AVAILABLE_CHANGE_KEY,
+            emptyCoinInventory,
+            serializer()
+        )
+
+        // Update local state
+        coinsByDenomination = emptyCoinInventory
+        tempCoinLevels = emptyCoinInventory.toMutableMap()
+
+        // Log the maintenance action
+        logMaintenanceAction("Collected all coins: RM $totalValue")
+
+        return totalValue
+    }
+
+    /**
+     * Get the total value of coins in the machine
+     */
+    fun getTotalCash(): Double {
+        return calculateTotalCoinValue()
+    }
+
+    /**
+     * Collect all cash from the machine
+     */
+    fun collectCash(): Double {
+        return collectAllCoins()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // DATA PERSISTENCE METHODS
+    //----------------------------------------------------------------------------------------------
 
     /**
      * Save all changes to storage
@@ -399,48 +468,15 @@ class MaintenanceViewModel {
         )
     }
 
+    //----------------------------------------------------------------------------------------------
+    // UI STATE MANAGEMENT
+    //----------------------------------------------------------------------------------------------
+
     /**
      * Clear any error messages
      */
     fun clearMessage() {
         maintenanceMessage = ""
         showInvalidPasswordMessage = false
-    }
-
-    /**
-     * Clear authentication state and exit maintenance mode
-     */
-    fun clearAuthentication() {
-        exitMaintenanceMode()
-        isPasswordValid = false
-        showInvalidPasswordMessage = false
-    }
-
-    /**
-     * Get the total value of coins in the machine
-     */
-    fun getTotalCash(): Double {
-        return calculateTotalCoinValue()
-    }
-
-    /**
-     * Collect all cash from the machine
-     */
-    fun collectCash(): Double {
-        return collectAllCoins()
-    }
-
-    /**
-     * Record maintenance actions before exiting
-     */
-    fun recordMaintenance() {
-        // Save all changes before exiting
-        saveChanges()
-
-        // Log the maintenance action
-        logMaintenanceAction("Maintenance completed")
-
-        // Exit maintenance mode
-        exitMaintenanceMode()
     }
 }

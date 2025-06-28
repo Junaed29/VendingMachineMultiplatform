@@ -70,9 +70,12 @@ import kotlin.math.round
  */
 class MaintenanceScreen : Screen {
 
+    //----------------------------------------------------------------------------------------------
+    // UTILITY METHODS
+    //----------------------------------------------------------------------------------------------
+
     /**
      * Helper function to format double values to 2 decimal places
-     * Based on the implementation from VendingMachineService
      */
     private fun formatToTwoDecimalPlaces(value: Double): String {
         val roundedValue = round(value * 100) / 100
@@ -87,64 +90,31 @@ class MaintenanceScreen : Screen {
         }
     }
 
+    //----------------------------------------------------------------------------------------------
+    // MAIN SCREEN CONTENT
+    //----------------------------------------------------------------------------------------------
+
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
     @Composable
     override fun Content() {
         // Initialize the ViewModel with persistent storage support
         val viewModel = remember { MaintenanceViewModel() }
-
-        // State variables for UI components
-        var passwordDigits by remember { mutableStateOf(List(6) { "" }) }
-        var isPasswordInvalid by remember { mutableStateOf(false) }
-        var isAuthenticated by remember { mutableStateOf(false) }
-        var selectedDrink by remember { mutableStateOf("Drink 1") }
-        var newPrice by remember { mutableStateOf("") }
-        var totalCoins by remember { mutableIntStateOf(0) }
-        var totalCans by remember { mutableIntStateOf(0) }
-        var cashDisplay by remember { mutableStateOf("") }
-        var showCashSlot by remember { mutableStateOf(false) }
-
-        // Create focus requesters for each password digit field
-        val focusRequesters = remember { List(6) { FocusRequester() } }
-
-        // Check window size for responsive design
+        val navigator = LocalNavigator.current
         val windowSize = rememberWindowSize()
         val isDesktop = windowSize == WindowSize.EXPANDED
 
-        // Adjust field size and padding based on platform
-        val digitFieldSize = if (isDesktop) 56.dp else 52.dp // Increased size for mobile
-        val digitFieldPadding = if (isDesktop) 6.dp else 2.dp // Reduced padding for mobile to prevent text cutoff
-
-        // Function to verify password
-        val verifyPassword = {
-            val password = passwordDigits.joinToString("")
-            // Use view model's validatePassword method instead of hardcoded password
-            if (viewModel.validatePassword(password)) {
-                isAuthenticated = true
-                isPasswordInvalid = false
-            } else {
-                isPasswordInvalid = true
-            }
-        }
-
-        val navigator = LocalNavigator.current
+        // State variables
+        var isAuthenticated by remember { mutableStateOf(false) }
+        var showCashSlot by remember { mutableStateOf(false) }
+        var cashDisplay by remember { mutableStateOf("") }
 
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text("Maintainer Panel", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            viewModel.clearAuthentication()
-                            navigator?.pop()
-                        }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = VendingMachineColors.MachinePanelColor,
-                        titleContentColor = Color.White
-                    )
+                MaintenanceTopAppBar(
+                    onBackClick = {
+                        viewModel.clearAuthentication()
+                        navigator?.pop()
+                    }
                 )
             }
         ) { innerPadding ->
@@ -157,565 +127,255 @@ class MaintenanceScreen : Screen {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (!isAuthenticated) {
-                    // PASSWORD ENTRY SECTION
-                    Text(
-                        "TYPE PASSWORD HERE",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = Color.Black,
-                        modifier = Modifier.padding(vertical = 16.dp)
+                    // Login section when not authenticated
+                    PasswordEntrySection(
+                        viewModel = viewModel,
+                        isDesktop = isDesktop,
+                        onAuthenticated = { isAuthenticated = true }
                     )
-
-                    // 6-digit password input fields with auto-focus
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        passwordDigits.forEachIndexed { index, digit ->
-                            OutlinedTextField(
-                                value = digit,
-                                onValueChange = { newValue ->
-                                    if (newValue.length <= 1 && newValue.all { it.isDigit() }) {
-                                        // Update the digit value
-                                        val newDigits = passwordDigits.toMutableList()
-                                        newDigits[index] = newValue
-                                        passwordDigits = newDigits
-
-                                        // If a digit is entered and not the last field, focus next field
-                                        if (newValue.isNotEmpty() && index < passwordDigits.size - 1) {
-                                            focusRequesters[index + 1].requestFocus()
-                                        }
-                                        // If it's the last field and a digit is entered, auto-submit
-                                        else if (newValue.isNotEmpty() && index == passwordDigits.size - 1) {
-                                            verifyPassword()
-                                        }
-                                    }
-                                },
-                                singleLine = true,
-                                modifier = Modifier
-                                    .size(digitFieldSize)
-                                    .focusRequester(focusRequesters[index])
-                                    .padding(horizontal = digitFieldPadding),
-                                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                    textAlign = TextAlign.Center,
-                                    // Reduce text size on desktop for better display within field
-                                    fontSize = if (isDesktop) 18.sp else 16.sp
-                                ),
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                                    unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f)
-                                ),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                            )
-                        }
-                    }
-
-                    // Request focus on first field when screen is shown
-                    LaunchedEffect(Unit) {
-                        delay(300) // Short delay to ensure UI is ready
-                        focusRequesters[0].requestFocus()
-                    }
-
-                    // Error message for invalid password
-                    if (isPasswordInvalid) {
-                        Text(
-                            "PASSWORD INVALID",
-                            color = Color.Red,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-
-                        // Clear password fields and refocus first field after showing error
-                        LaunchedEffect(isPasswordInvalid) {
-                            if (isPasswordInvalid) {
-                                delay(1000) // Show error message for a moment
-                                passwordDigits = List(6) { "" }
-                                delay(300)
-                                focusRequesters[0].requestFocus()
-                                isPasswordInvalid = false // Hide error message when clearing fields
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = { verifyPassword() },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = VendingMachineColors.ButtonColor
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("VERIFY PASSWORD", fontWeight = FontWeight.Bold)
-                    }
                 } else {
-                    // Door unlocked status indicator
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = VendingMachineColors.AccessGrantedColor
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                "MAINTENANCE MODE ACTIVE",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                color = Color.White
-                            )
-                            Text(
-                                "Door Unlocked - Access Granted",
-                                fontSize = 14.sp,
-                                color = Color.White
-                            )
-                            if (viewModel.maintenanceMessage.isNotEmpty()) {
-                                Text(
-                                    viewModel.maintenanceMessage,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = Color.White,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.padding(top = 8.dp)
-                                )
-                            }
-                        }
-                    }
+                    // Maintenance mode sections when authenticated
+                    MaintenanceActiveCard(message = viewModel.maintenanceMessage)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // AUTHENTICATED SECTIONS
-
-                    // COIN COUNT SECTION
-                    SectionCard(title = "Coin Count") {
-                        Text(
-                            "View coins by denomination and update quantities",
-                            fontSize = 14.sp,
-                            color = Color.White,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-
-                        // Coin counts from viewModel
-                        viewModel.coinsByDenomination.entries.sortedBy { it.key }.forEach { (denomination, count) ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                val denomText = when(denomination) {
-                                    10 -> "10 Sen"
-                                    20 -> "20 Sen"
-                                    50 -> "50 Sen"
-                                    100 -> "1 RM"
-                                    else -> "$denomination Sen"
-                                }
-
-                                Text(
-                                    denomText,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Medium
-                                )
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        "Quantity: $count",
-                                        color = Color.White
-                                    )
-
-                                    Spacer(modifier = Modifier.width(8.dp))
-
-                                    var newValue by remember(denomination) { mutableStateOf("$count") }
-                                    var showUpdateField by remember(denomination) { mutableStateOf(false) }
-
-                                    if (showUpdateField) {
-                                        // Show number input field
-                                        OutlinedTextField(
-                                            value = newValue,
-                                            onValueChange = { value ->
-                                                if (value.isEmpty() || value.all { it.isDigit() }) {
-                                                    newValue = value
-                                                }
-                                            },
-                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                            modifier = Modifier.width(80.dp),
-                                            colors = TextFieldDefaults.colors(
-                                                focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                                                unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                                                focusedTextColor = Color.White,
-                                                unfocusedTextColor = Color.White
-                                            ),
-                                            singleLine = true
-                                        )
-
-                                        Spacer(modifier = Modifier.width(8.dp))
-
-                                        Button(
-                                            onClick = {
-                                                val quantity = newValue.toIntOrNull() ?: 0
-                                                if (viewModel.updateCoinQuantity(denomination, quantity)) {
-                                                    showUpdateField = false
-                                                }
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = VendingMachineColors.ButtonColor
-                                            ),
-                                            shape = RoundedCornerShape(4.dp),
-                                            modifier = Modifier.padding(4.dp)
-                                        ) {
-                                            Text("Save", fontSize = 12.sp)
-                                        }
-                                    } else {
-                                        // Show update button
-                                        Button(
-                                            onClick = { showUpdateField = true },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = VendingMachineColors.ButtonColor
-                                            ),
-                                            shape = RoundedCornerShape(4.dp),
-                                            modifier = Modifier.padding(4.dp)
-                                        ) {
-                                            Text("Update", fontSize = 12.sp)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Total cash value
-                        Text(
-                            "Total Cash Value: RM ${formatToTwoDecimalPlaces(viewModel.calculateTotalCoinValue())}",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
+                    // Coin count section
+                    CoinManagementSection(viewModel = viewModel)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // CAN COUNT SECTION
-                    SectionCard(title = "Drink Inventory") {
-                        Text(
-                            "View and update drink inventory levels",
-                            fontSize = 14.sp,
-                            color = Color.White,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-
-                        // Drink inventory from viewModel
-                        viewModel.drinkStockLevels.entries.sortedBy { it.key }.forEach { (drinkName, count) ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    drinkName,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Medium
-                                )
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        "Quantity: $count",
-                                        color = Color.White
-                                    )
-
-                                    Spacer(modifier = Modifier.width(8.dp))
-
-                                    var newValue by remember(drinkName) { mutableStateOf("$count") }
-                                    var showUpdateField by remember(drinkName) { mutableStateOf(false) }
-
-                                    if (showUpdateField) {
-                                        // Show number input field
-                                        OutlinedTextField(
-                                            value = newValue,
-                                            onValueChange = { value ->
-                                                if (value.isEmpty() || value.all { it.isDigit() }) {
-                                                    newValue = value
-                                                }
-                                            },
-                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                            modifier = Modifier.width(80.dp),
-                                            colors = TextFieldDefaults.colors(
-                                                focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                                                unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                                                focusedTextColor = Color.White,
-                                                unfocusedTextColor = Color.White
-                                            ),
-                                            singleLine = true
-                                        )
-
-                                        Spacer(modifier = Modifier.width(8.dp))
-
-                                        Button(
-                                            onClick = {
-                                                val quantity = newValue.toIntOrNull() ?: 0
-                                                if (viewModel.updateDrinkStock(drinkName, quantity)) {
-                                                    showUpdateField = false
-                                                }
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = VendingMachineColors.ButtonColor
-                                            ),
-                                            shape = RoundedCornerShape(4.dp),
-                                            modifier = Modifier.padding(4.dp)
-                                        ) {
-                                            Text("Save", fontSize = 12.sp)
-                                        }
-                                    } else {
-                                        // Show update button
-                                        Button(
-                                            onClick = { showUpdateField = true },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = VendingMachineColors.ButtonColor
-                                            ),
-                                            shape = RoundedCornerShape(4.dp),
-                                            modifier = Modifier.padding(4.dp)
-                                        ) {
-                                            Text("Update", fontSize = 12.sp)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Total drinks
-                        Text(
-                            "Total Drinks: ${viewModel.drinkStockLevels.values.sum()}",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
+                    // Drink inventory section
+                    DrinkInventorySection(viewModel = viewModel)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // PRICE UPDATE SECTION
-                    SectionCard(title = "Price Update") {
-                        Text(
-                            "Select a drink and enter a new price",
-                            fontSize = 14.sp,
-                            color = Color.White,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-
-                        // Drink selector
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                "Selected Drink:",
-                                color = Color.White,
-                                fontWeight = FontWeight.Medium
-                            )
-
-                            // Dropdown-like selection (simplified to buttons for KMP)
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                viewModel.drinkPriceSettings.keys.sorted().forEach { drinkName ->
-                                    val isSelected = selectedDrink == drinkName
-                                    Button(
-                                        onClick = { selectedDrink = drinkName },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = if (isSelected)
-                                                VendingMachineColors.AccentColor
-                                            else
-                                                VendingMachineColors.ButtonColor.copy(alpha = 0.6f)
-                                        ),
-                                        shape = RoundedCornerShape(4.dp),
-                                        modifier = Modifier.padding(horizontal = 2.dp)
-                                    ) {
-                                        Text(
-                                            drinkName.replace("BRAND ", "B"),
-                                            fontSize = 12.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // Current price display
-                        val currentPrice = viewModel.drinkPriceSettings[selectedDrink] ?: 0.0
-                        Text(
-                            "Current Price: RM ${formatToTwoDecimalPlaces(currentPrice)}",
-                            color = VendingMachineColors.DisplayColor,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-
-                        // New price input
-                        OutlinedTextField(
-                            value = newPrice,
-                            onValueChange = { input ->
-                                // Only accept valid decimal numbers
-                                if (input.isEmpty() || input.matches(Regex("^\\d*\\.?\\d{0,2}$"))) {
-                                    newPrice = input
-                                }
-                            },
-                            label = { Text("New Price (RM)", color = Color.White) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                                unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                cursorColor = Color.White
-                            )
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = {
-                                // Update price logic with validation
-                                newPrice.toDoubleOrNull()?.let { price ->
-                                    if (price > 0) {
-                                        viewModel.updateDrinkPrice(selectedDrink, price)
-                                        newPrice = ""
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = VendingMachineColors.ButtonColor
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text("UPDATE PRICE", fontWeight = FontWeight.Bold)
-                        }
-                    }
+                    // Price update section
+                    PriceUpdateSection(viewModel = viewModel)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // CASH VIEW & COLLECTION SECTION
-                    SectionCard(title = "Cash View & Collection") {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Button(
-                                onClick = {
-                                    // Display total cash using the formatting function
-                                    cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.getTotalCash())
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = VendingMachineColors.ButtonColor
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text("VIEW TOTAL CASH")
-                            }
-
-                            Button(
-                                onClick = {
-                                    // Collect cash logic using the formatting function
-                                    showCashSlot = true
-                                    cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.collectCash())
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = VendingMachineColors.ButtonColor
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text("COLLECT CASH")
-                            }
+                    // Cash collection section
+                    CashCollectionSection(
+                        viewModel = viewModel,
+                        cashDisplay = cashDisplay,
+                        showCashSlot = showCashSlot,
+                        onViewTotalCash = {
+                            cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.getTotalCash())
+                        },
+                        onCollectCash = {
+                            showCashSlot = true
+                            cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.collectCash())
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            "COLLECT ALL CASH HERE",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White, // Added explicit white color
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Cash slot display
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(80.dp)
-                                .background(
-                                    color = if (showCashSlot) VendingMachineColors.DisplayColor else Color.LightGray,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .border(
-                                    width = 2.dp,
-                                    color = Color.DarkGray,
-                                    shape = RoundedCornerShape(8.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (cashDisplay.isNotEmpty()) {
-                                Text(
-                                    cashDisplay,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black
-                                )
-                            } else {
-                                Text(
-                                    "Cash Slot",
-                                    color = Color.DarkGray
-                                )
-                            }
-                        }
-                    }
+                    )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // FINALIZE BUTTON
-                    Button(
+                    // Finalize maintenance button
+                    FinalizeMaintananceButton(
                         onClick = {
-                            // Record maintenance service and navigate back
                             viewModel.recordMaintenance()
                             navigator?.pop()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = VendingMachineColors.AccentColor
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            "PRESS HERE WHEN FINISHED",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
-                    }
+                        }
+                    )
                 }
             }
         }
     }
+
+    //----------------------------------------------------------------------------------------------
+    // TOP APP BAR
+    //----------------------------------------------------------------------------------------------
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun MaintenanceTopAppBar(onBackClick: () -> Unit) {
+        TopAppBar(
+            title = { Text("Maintainer Panel", fontWeight = FontWeight.Bold) },
+            navigationIcon = {
+                IconButton(onClick = onBackClick) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = VendingMachineColors.MachinePanelColor,
+                titleContentColor = Color.White
+            )
+        )
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // PASSWORD ENTRY SECTION
+    //----------------------------------------------------------------------------------------------
+
+    @Composable
+    private fun PasswordEntrySection(
+        viewModel: MaintenanceViewModel,
+        isDesktop: Boolean,
+        onAuthenticated: () -> Unit
+    ) {
+        // State variables for password entry
+        var passwordDigits by remember { mutableStateOf(List(6) { "" }) }
+        var isPasswordInvalid by remember { mutableStateOf(false) }
+
+        // Create focus requesters for each digit field
+        val focusRequesters = remember { List(6) { FocusRequester() } }
+
+        // Field size and padding based on platform
+        val digitFieldSize = if (isDesktop) 56.dp else 52.dp
+        val digitFieldPadding = if (isDesktop) 6.dp else 2.dp
+
+        // Function to verify password
+        val verifyPassword = {
+            val password = passwordDigits.joinToString("")
+            if (viewModel.validatePassword(password)) {
+                isPasswordInvalid = false
+                onAuthenticated()
+            } else {
+                isPasswordInvalid = true
+            }
+        }
+
+        Text(
+            "TYPE PASSWORD HERE",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            color = Color.Black,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+
+        // 6-digit password input fields with auto-focus
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            passwordDigits.forEachIndexed { index, digit ->
+                OutlinedTextField(
+                    value = digit,
+                    onValueChange = { newValue ->
+                        if (newValue.length <= 1 && newValue.all { it.isDigit() }) {
+                            // Update the digit value
+                            val newDigits = passwordDigits.toMutableList()
+                            newDigits[index] = newValue
+                            passwordDigits = newDigits
+
+                            // If a digit is entered and not the last field, focus next field
+                            if (newValue.isNotEmpty() && index < passwordDigits.size - 1) {
+                                focusRequesters[index + 1].requestFocus()
+                            }
+                            // If it's the last field and a digit is entered, auto-submit
+                            else if (newValue.isNotEmpty() && index == passwordDigits.size - 1) {
+                                verifyPassword()
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .size(digitFieldSize)
+                        .focusRequester(focusRequesters[index])
+                        .padding(horizontal = digitFieldPadding),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        textAlign = TextAlign.Center,
+                        fontSize = if (isDesktop) 18.sp else 16.sp
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                        unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f)
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
+        }
+
+        // Request focus on first field when screen is shown
+        LaunchedEffect(Unit) {
+            delay(300) // Short delay to ensure UI is ready
+            focusRequesters[0].requestFocus()
+        }
+
+        // Error message for invalid password
+        if (isPasswordInvalid) {
+            Text(
+                "PASSWORD INVALID",
+                color = Color.Red,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            // Clear password fields and refocus first field after showing error
+            LaunchedEffect(isPasswordInvalid) {
+                if (isPasswordInvalid) {
+                    delay(1000) // Show error message for a moment
+                    passwordDigits = List(6) { "" }
+                    delay(300)
+                    focusRequesters[0].requestFocus()
+                    isPasswordInvalid = false // Hide error message when clearing fields
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = { verifyPassword() },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = VendingMachineColors.ButtonColor
+            ),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text("VERIFY PASSWORD", fontWeight = FontWeight.Bold)
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // MAINTENANCE ACTIVE CARD
+    //----------------------------------------------------------------------------------------------
+
+    @Composable
+    private fun MaintenanceActiveCard(message: String) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = VendingMachineColors.AccessGrantedColor
+            ),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "MAINTENANCE MODE ACTIVE",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.White
+                )
+                Text(
+                    "Door Unlocked - Access Granted",
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
+                if (message.isNotEmpty()) {
+                    Text(
+                        message,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // SECTION CARD TEMPLATE
+    //----------------------------------------------------------------------------------------------
 
     @Composable
     private fun SectionCard(
@@ -723,8 +383,7 @@ class MaintenanceScreen : Screen {
         content: @Composable () -> Unit
     ) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
                 containerColor = VendingMachineColors.MachineBackground
             ),
@@ -748,37 +407,472 @@ class MaintenanceScreen : Screen {
         }
     }
 
+    //----------------------------------------------------------------------------------------------
+    // COIN MANAGEMENT SECTION
+    //----------------------------------------------------------------------------------------------
+
     @Composable
-    private fun CoinButton(
-        denomination: String,
-        onClick: () -> Unit
-    ) {
-        Button(
-            onClick = onClick,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = VendingMachineColors.AccentColor.copy(alpha = 0.5f)
-            ),
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.padding(4.dp)
-        ) {
-            Text(denomination, fontWeight = FontWeight.Bold)
+    private fun CoinManagementSection(viewModel: MaintenanceViewModel) {
+        SectionCard(title = "Coin Count") {
+            Text(
+                "View coins by denomination and update quantities",
+                fontSize = 14.sp,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Coin counts from viewModel
+            viewModel.coinsByDenomination.entries.sortedBy { it.key }.forEach { (denomination, count) ->
+                CoinQuantityRow(
+                    denomination = denomination,
+                    count = count,
+                    onUpdateQuantity = { newQuantity ->
+                        viewModel.updateCoinQuantity(denomination, newQuantity)
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Total cash value
+            Text(
+                "Total Cash Value: RM ${formatToTwoDecimalPlaces(viewModel.calculateTotalCoinValue())}",
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
         }
     }
 
     @Composable
-    private fun DrinkButton(
-        drinkName: String,
-        onClick: () -> Unit
+    private fun CoinQuantityRow(
+        denomination: Int,
+        count: Int,
+        onUpdateQuantity: (Int) -> Boolean
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            val denomText = when(denomination) {
+                10 -> "10 Sen"
+                20 -> "20 Sen"
+                50 -> "50 Sen"
+                100 -> "1 RM"
+                else -> "$denomination Sen"
+            }
+
+            Text(
+                denomText,
+                color = Color.White,
+                fontWeight = FontWeight.Medium
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Quantity: $count",
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                var newValue by remember(denomination) { mutableStateOf("$count") }
+                var showUpdateField by remember(denomination) { mutableStateOf(false) }
+
+                if (showUpdateField) {
+                    // Show number input field
+                    OutlinedTextField(
+                        value = newValue,
+                        onValueChange = { value ->
+                            if (value.isEmpty() || value.all { it.isDigit() }) {
+                                newValue = value
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.width(80.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                            unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(
+                        onClick = {
+                            val quantity = newValue.toIntOrNull() ?: 0
+                            if (onUpdateQuantity(quantity)) {
+                                showUpdateField = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = VendingMachineColors.ButtonColor
+                        ),
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.padding(4.dp)
+                    ) {
+                        Text("Save", fontSize = 12.sp)
+                    }
+                } else {
+                    // Show update button
+                    Button(
+                        onClick = { showUpdateField = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = VendingMachineColors.ButtonColor
+                        ),
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.padding(4.dp)
+                    ) {
+                        Text("Update", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // DRINK INVENTORY SECTION
+    //----------------------------------------------------------------------------------------------
+
+    @Composable
+    private fun DrinkInventorySection(viewModel: MaintenanceViewModel) {
+        SectionCard(title = "Drink Inventory") {
+            Text(
+                "View and update drink inventory levels",
+                fontSize = 14.sp,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Drink inventory from viewModel
+            viewModel.drinkStockLevels.entries.sortedBy { it.key }.forEach { (drinkName, count) ->
+                DrinkQuantityRow(
+                    drinkName = drinkName,
+                    count = count,
+                    onUpdateQuantity = { newQuantity ->
+                        viewModel.updateDrinkStock(drinkName, newQuantity)
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Total drinks
+            Text(
+                "Total Drinks: ${viewModel.drinkStockLevels.values.sum()}",
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
+    }
+
+    @Composable
+    private fun DrinkQuantityRow(
+        drinkName: String,
+        count: Int,
+        onUpdateQuantity: (Int) -> Boolean
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                drinkName,
+                color = Color.White,
+                fontWeight = FontWeight.Medium
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Quantity: $count",
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                var newValue by remember(drinkName) { mutableStateOf("$count") }
+                var showUpdateField by remember(drinkName) { mutableStateOf(false) }
+
+                if (showUpdateField) {
+                    // Show number input field
+                    OutlinedTextField(
+                        value = newValue,
+                        onValueChange = { value ->
+                            if (value.isEmpty() || value.all { it.isDigit() }) {
+                                newValue = value
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.width(80.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                            unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(
+                        onClick = {
+                            val quantity = newValue.toIntOrNull() ?: 0
+                            if (onUpdateQuantity(quantity)) {
+                                showUpdateField = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = VendingMachineColors.ButtonColor
+                        ),
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.padding(4.dp)
+                    ) {
+                        Text("Save", fontSize = 12.sp)
+                    }
+                } else {
+                    // Show update button
+                    Button(
+                        onClick = { showUpdateField = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = VendingMachineColors.ButtonColor
+                        ),
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.padding(4.dp)
+                    ) {
+                        Text("Update", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // PRICE UPDATE SECTION
+    //----------------------------------------------------------------------------------------------
+
+    @Composable
+    private fun PriceUpdateSection(viewModel: MaintenanceViewModel) {
+        var selectedDrink by remember { mutableStateOf(viewModel.drinkPriceSettings.keys.firstOrNull() ?: "BRAND 1") }
+        var newPrice by remember { mutableStateOf("") }
+
+        SectionCard(title = "Price Update") {
+            Text(
+                "Select a drink and enter a new price",
+                fontSize = 14.sp,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Drink selector
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "Selected Drink:",
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
+                )
+
+                // Drink selection buttons
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    viewModel.drinkPriceSettings.keys.sorted().forEach { drinkName ->
+                        val isSelected = selectedDrink == drinkName
+                        Button(
+                            onClick = { selectedDrink = drinkName },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isSelected)
+                                    VendingMachineColors.AccentColor
+                                else
+                                    VendingMachineColors.ButtonColor.copy(alpha = 0.6f)
+                            ),
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier.padding(horizontal = 2.dp)
+                        ) {
+                            Text(
+                                drinkName.replace("BRAND ", "B"),
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Current price display
+            val currentPrice = viewModel.drinkPriceSettings[selectedDrink] ?: 0.0
+            Text(
+                "Current Price: RM ${formatToTwoDecimalPlaces(currentPrice)}",
+                color = VendingMachineColors.DisplayColor,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            // New price input
+            OutlinedTextField(
+                value = newPrice,
+                onValueChange = { input ->
+                    // Only accept valid decimal numbers
+                    if (input.isEmpty() || input.matches(Regex("^\\d*\\.?\\d{0,2}$"))) {
+                        newPrice = input
+                    }
+                },
+                label = { Text("New Price (RM)", color = Color.White) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                    unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    cursorColor = Color.White
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    // Update price logic with validation
+                    newPrice.toDoubleOrNull()?.let { price ->
+                        if (price > 0) {
+                            viewModel.updateDrinkPrice(selectedDrink, price)
+                            newPrice = ""
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = VendingMachineColors.ButtonColor
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("UPDATE PRICE", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // CASH COLLECTION SECTION
+    //----------------------------------------------------------------------------------------------
+
+    @Composable
+    private fun CashCollectionSection(
+        viewModel: MaintenanceViewModel,
+        cashDisplay: String,
+        showCashSlot: Boolean,
+        onViewTotalCash: () -> Unit,
+        onCollectCash: () -> Unit
+    ) {
+        SectionCard(title = "Cash View & Collection") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(
+                    onClick = onViewTotalCash,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VendingMachineColors.ButtonColor
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("VIEW TOTAL CASH")
+                }
+
+                Button(
+                    onClick = onCollectCash,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VendingMachineColors.ButtonColor
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("COLLECT CASH")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                "COLLECT ALL CASH HERE",
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Cash slot display
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .background(
+                        color = if (showCashSlot) VendingMachineColors.DisplayColor else Color.LightGray,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        width = 2.dp,
+                        color = Color.DarkGray,
+                        shape = RoundedCornerShape(8.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (cashDisplay.isNotEmpty()) {
+                    Text(
+                        cashDisplay,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                } else {
+                    Text(
+                        "Cash Slot",
+                        color = Color.DarkGray
+                    )
+                }
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // FINALIZE MAINTENANCE BUTTON
+    //----------------------------------------------------------------------------------------------
+
+    @Composable
+    private fun FinalizeMaintananceButton(onClick: () -> Unit) {
         Button(
             onClick = onClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = VendingMachineColors.AccentColor.copy(alpha = 0.5f)
+                containerColor = VendingMachineColors.AccentColor
             ),
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.padding(4.dp)
+            shape = RoundedCornerShape(8.dp)
         ) {
-            Text(drinkName, fontWeight = FontWeight.Bold)
+            Text(
+                "PRESS HERE WHEN FINISHED",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
         }
     }
 }
