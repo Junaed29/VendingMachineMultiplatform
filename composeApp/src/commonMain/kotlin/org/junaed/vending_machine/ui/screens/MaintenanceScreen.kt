@@ -2,6 +2,7 @@ package org.junaed.vending_machine.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -829,33 +830,91 @@ class MaintenanceScreen : Screen {
         onViewTotalCash: () -> Unit,
         onCollectCash: () -> Unit
     ) {
-        SectionCard(title = "Cash View & Collection") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Button(
-                    onClick = onViewTotalCash,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VendingMachineColors.ButtonColor
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("VIEW TOTAL CASH")
-                }
+        // Local state to track if cash is in the dispenser (collected but not yet taken)
+        var cashInDispenser by remember { mutableStateOf(false) }
+        var dispenserAmount by remember { mutableStateOf("") }
 
-                Button(
-                    onClick = onCollectCash,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VendingMachineColors.ButtonColor
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("COLLECT CASH")
-                }
+        // Ensure dispenser shows as active whenever it contains cash
+        LaunchedEffect(dispenserAmount) {
+            cashInDispenser = dispenserAmount.isNotEmpty()
+        }
+
+        SectionCard(title = "Cash View & Collection") {
+            // View Total Cash Button
+            Button(
+                onClick = {
+                    onViewTotalCash()
+                    // Update UI state
+                    dispenserAmount = cashDisplay
+                    cashInDispenser = false
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = VendingMachineColors.ButtonColor
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    "PRESS HERE TO VIEW TOTAL CASH HELD BY MACHINE",
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Display total cash value
+            if (cashDisplay.isNotEmpty() && !cashInDispenser) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .background(
+                            color = Color.LightGray,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = Color.DarkGray,
+                            shape = RoundedCornerShape(8.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = cashDisplay,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // Collect All Cash Button
+            Button(
+                onClick = {
+                    onCollectCash()
+                    // Update UI state for dispenser
+                    dispenserAmount = cashDisplay
+                    cashInDispenser = true
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = VendingMachineColors.ButtonColor
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    "PRESS HERE TO COLLECT ALL CASH",
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             Text(
                 "COLLECT ALL CASH HERE",
@@ -867,35 +926,81 @@ class MaintenanceScreen : Screen {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Cash slot display
+            // Cash dispenser box - clickable to clear when cash is present
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .height(100.dp)
                     .background(
-                        color = if (showCashSlot) VendingMachineColors.DisplayColor else Color.LightGray,
+                        color = if (cashInDispenser) VendingMachineColors.DisplayColor else Color.LightGray,
                         shape = RoundedCornerShape(8.dp)
                     )
                     .border(
                         width = 2.dp,
                         color = Color.DarkGray,
                         shape = RoundedCornerShape(8.dp)
+                    )
+                    // Make it clickable when cash is in the dispenser
+                    .then(
+                        if (cashInDispenser) {
+                            Modifier.clickable {
+                                // Clear the dispenser (simulating cash being taken)
+                                cashInDispenser = false
+                                dispenserAmount = ""
+                            }
+                        } else {
+                            Modifier
+                        }
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                if (cashDisplay.isNotEmpty()) {
-                    Text(
-                        cashDisplay,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                } else {
-                    Text(
-                        "Cash Slot",
-                        color = Color.DarkGray
-                    )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Show the dispenser amount when cash is collected
+                    if (cashInDispenser && dispenserAmount.isNotEmpty() ) {
+                        Text(
+                            text = dispenserAmount,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Tap to collect cash",
+                            fontSize = 14.sp,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                            color = Color.DarkGray
+                        )
+                    } else {
+                        Text(
+                            "Cash Dispenser",
+                            fontSize = 18.sp,
+                            color = Color.DarkGray
+                        )
+                        Text(
+                            "Empty",
+                            fontSize = 14.sp,
+                            color = Color.DarkGray
+                        )
+                    }
                 }
+            }
+
+            if (cashInDispenser) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    "Cash ready for collection",
+                    fontSize = 14.sp,
+                    color = VendingMachineColors.DisplayColor,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
