@@ -334,6 +334,18 @@ class MaintenanceViewModel {
 
         // Update temporary map
         tempCoinLevels[denomination] = newQuantity
+
+        // Update UI state immediately so changes are visible
+        coinsByDenomination = tempCoinLevels.toMap()
+
+        // Save changes to storage immediately
+        storageService.saveObject(
+            AVAILABLE_CHANGE_KEY,
+            tempCoinLevels,
+            serializer()
+        )
+
+        maintenanceMessage = "Coin quantity updated"
         return true
     }
 

@@ -501,77 +501,18 @@ class MaintenanceScreen : Screen {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            /*
             // Update quantity field for the selected denomination
-            var newValue by remember(selectedDenomination) { mutableStateOf("${count}") }
-            var showUpdateField by remember(selectedDenomination) { mutableStateOf(false) }
-
-            if (showUpdateField) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "New Quantity: ",
-                        color = Color.White,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    OutlinedTextField(
-                        value = newValue,
-                        onValueChange = { value ->
-                            if (value.isEmpty() || value.all { it.isDigit() }) {
-                                newValue = value
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.width(100.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                            unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        ),
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Button(
-                        onClick = {
-                            val quantity = newValue.toIntOrNull() ?: 0
-                            if (viewModel.updateCoinQuantity(selectedDenomination, quantity)) {
-                                showUpdateField = false
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = VendingMachineColors.ButtonColor
-                        ),
-                        shape = RoundedCornerShape(4.dp),
-                        modifier = Modifier.padding(4.dp)
-                    ) {
-                        Text("Save", fontSize = 12.sp)
-                    }
+            CoinQuantityUpdateField(
+                selectedDenomination = selectedDenomination,
+                currentCount = count,
+                onUpdateQuantity = { newQuantity ->
+                    viewModel.updateCoinQuantity(selectedDenomination, newQuantity)
                 }
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Button(
-                        onClick = { showUpdateField = true },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = VendingMachineColors.ButtonColor
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth(0.6f)
-                    ) {
-                        Text("Update Coin Quantity", fontWeight = FontWeight.Medium)
-                    }
-                }
-            }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
+             */
 
             // Total cash value
             Text(
@@ -945,6 +886,87 @@ class MaintenanceScreen : Screen {
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
             )
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // COIN QUANTITY UPDATE FIELD
+    //----------------------------------------------------------------------------------------------
+
+    @Composable
+    private fun CoinQuantityUpdateField(
+        selectedDenomination: Int,
+        currentCount: Int,
+        onUpdateQuantity: (Int) -> Boolean
+    ) {
+        // State variables for the update field
+        var newValue by remember(selectedDenomination) { mutableStateOf("$currentCount") }
+        var showUpdateField by remember(selectedDenomination) { mutableStateOf(false) }
+
+        if (showUpdateField) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "New Quantity: ",
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
+                )
+
+                OutlinedTextField(
+                    value = newValue,
+                    onValueChange = { value ->
+                        if (value.isEmpty() || value.all { it.isDigit() }) {
+                            newValue = value
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.width(100.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                        unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Button(
+                    onClick = {
+                        val quantity = newValue.toIntOrNull() ?: 0
+                        if (onUpdateQuantity(quantity)) {
+                            showUpdateField = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VendingMachineColors.ButtonColor
+                    ),
+                    shape = RoundedCornerShape(4.dp),
+                    modifier = Modifier.padding(4.dp)
+                ) {
+                    Text("Save", fontSize = 12.sp)
+                }
+            }
+        } else {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Button(
+                    onClick = { showUpdateField = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VendingMachineColors.ButtonColor
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth(0.6f)
+                ) {
+                    Text("Update Coin Quantity", fontWeight = FontWeight.Medium)
+                }
+            }
         }
     }
 }
