@@ -74,7 +74,7 @@ fun CustomerPanelScreen(
     val drinks = listOf(
         "Coke" to 2.50,
         "Sprite" to 2.30,
-        "Vimto" to 2.80,
+        "DrinkBot" to 2.80,
         "Pepsi" to 2.40,
         "Fanta" to 2.20
     )
@@ -91,7 +91,7 @@ fun CustomerPanelScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            "VIMTO Soft Drinks Dispenser",
+                            "DrinkBot Soft Drinks Dispenser",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,

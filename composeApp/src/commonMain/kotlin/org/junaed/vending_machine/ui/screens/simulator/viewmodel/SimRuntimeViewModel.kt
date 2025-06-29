@@ -20,7 +20,7 @@ class SimRuntimeViewModel {
     enum class Denom { CENT_10, CENT_20, CENT_50, RM_1 }
 
     // Drink brands available in the machine
-    enum class Brand { COKE, SPRITE, VIMTO, PEPSI, FANTA }
+    enum class Brand { COKE, SPRITE, DrinkBot, PEPSI, FANTA }
 
     // Main simulation state
     var isRunning by mutableStateOf(false)

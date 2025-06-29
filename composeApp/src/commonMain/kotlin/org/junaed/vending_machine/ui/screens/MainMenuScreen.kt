@@ -44,7 +44,7 @@ class MainMenuScreen: Screen {
                 TopAppBar(
                     title = {
                         Text(
-                            "VIMTO Vending Machine",
+                            "DrinkBot Vending Machine",
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
@@ -81,7 +81,7 @@ class MainMenuScreen: Screen {
                 ) {
                     // App logo or title
                     Text(
-                        "VIMTO",
+                        "DrinkBot",
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 36.sp,
                         color = VendingMachineColors.AccentColor,
@@ -125,7 +125,7 @@ class MainMenuScreen: Screen {
 
                     // Copyright information
                     Text(
-                        "© 2025 VIMTO Soft Drinks Ltd",
+                        "© 2025 DrinkBot Soft Drinks Ltd",
                         fontSize = 12.sp,
                         color = Color.White.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center

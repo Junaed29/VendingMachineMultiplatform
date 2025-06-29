@@ -64,7 +64,7 @@ fun MaintainerPanelScreen(
     var errorMessage by remember { mutableStateOf("") }
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
-    // The correct password is "vimto123" in this simulation
+    // The correct password is "DrinkBot123" in this simulation
     val correctPassword = "123456"
 
     Card(
@@ -341,7 +341,7 @@ private fun StockTab(viewModel: SimRuntimeViewModel) {
 @Composable
 private fun PricesTab(viewModel: SimRuntimeViewModel) {
     // Sample drink data
-    val drinks = listOf("Coke" to 2.50, "Sprite" to 2.30, "Vimto" to 2.80, "Pepsi" to 2.40, "Fanta" to 2.20)
+    val drinks = listOf("Coke" to 2.50, "Sprite" to 2.30, "DrinkBot" to 2.80, "Pepsi" to 2.40, "Fanta" to 2.20)
 
     Column {
         Text(
@@ -529,7 +529,7 @@ private fun StatusTab(viewModel: SimRuntimeViewModel) {
         Button(
             onClick = { /* Simulated action */ },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFE63B8C) // VIMTO pink
+                containerColor = Color(0xFFE63B8C) // DrinkBot pink
             ),
             modifier = Modifier.fillMaxWidth()
         ) {

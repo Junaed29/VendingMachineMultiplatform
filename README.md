@@ -1,4 +1,4 @@
-# VIMTO Vending Machine Multiplatform
+# DrinkBot Vending Machine Multiplatform
 
 A comprehensive Kotlin Multiplatform application that simulates a vending machine system across Android, iOS, Desktop, and Web platforms. The application simulates the operations of a soft drinks dispenser with full purchasing, maintenance, and simulation capabilities.
 

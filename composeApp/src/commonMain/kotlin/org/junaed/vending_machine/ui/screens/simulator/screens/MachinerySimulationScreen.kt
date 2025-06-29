@@ -233,10 +233,10 @@ fun MachinerySimulationScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         NumericField(
-                            label = "Vimto",
-                            initialValue = viewModel.canCounts[Brand.VIMTO] ?: 0,
+                            label = "DrinkBot",
+                            initialValue = viewModel.canCounts[Brand.DrinkBot] ?: 0,
                             onValidChange = { newValue ->
-                                viewModel.updateCanCount(Brand.VIMTO, newValue)
+                                viewModel.updateCanCount(Brand.DrinkBot, newValue)
                             },
                             onInvalidInput = {
                                 toastMessage = "0-20 only"

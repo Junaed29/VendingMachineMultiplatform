@@ -55,8 +55,8 @@ import org.junaed.vending_machine.ui.utils.rememberWindowSize
 import org.junaed.vending_machine.viewmodel.VendingMachineViewModel
 
 /**
- * VIMTO Soft Drinks Dispenser Screen
- * This screen displays the vending machine interface modeled after a VIMTO vending machine
+ * DrinkBot Soft Drinks Dispenser Screen
+ * This screen displays the vending machine interface modeled after a DrinkBot vending machine
  */
 class VendingMachineScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -77,7 +77,7 @@ class VendingMachineScreen : Screen {
                 TopAppBar(
                     title = {
                         Text(
-                            "VIMTO Soft Drinks Dispenser",
+                            "DrinkBot Soft Drinks Dispenser",
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
@@ -148,7 +148,7 @@ class VendingMachineScreen : Screen {
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
             ) {
-                VimtoMachineHeader()
+                DrinkBotMachineHeader()
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -234,7 +234,7 @@ class VendingMachineScreen : Screen {
                 .padding(horizontal = 16.dp)
         ) {
             // Machine header
-            VimtoMachineHeader()
+            DrinkBotMachineHeader()
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -292,7 +292,7 @@ class VendingMachineScreen : Screen {
     }
 
     @Composable
-    private fun VimtoMachineHeader() {
+    private fun DrinkBotMachineHeader() {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -311,7 +311,7 @@ class VendingMachineScreen : Screen {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "VIMTO SOFT DRINKS",
+                    "DrinkBot SOFT DRINKS",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
                     color = VendingMachineColors.DisplayColor
