@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import org.junaed.vending_machine.simulator.screens.OverallControlScreen
 import org.junaed.vending_machine.ui.theme.VendingMachineColors
 
 /**
@@ -117,7 +118,7 @@ class MainMenuScreen: Screen {
                     // Button to navigate to the Simulator screen
                     MainMenuButton(
                         text = "Simulator",
-                        onClick = { navigator?.push(SimulatorScreen()) }
+                        onClick = { navigator?.push(OverallControlScreen()) }
                     )
 
                     Spacer(modifier = Modifier.height(48.dp))

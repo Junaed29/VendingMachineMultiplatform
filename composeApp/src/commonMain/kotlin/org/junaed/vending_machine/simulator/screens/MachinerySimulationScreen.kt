@@ -15,11 +15,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -32,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -52,7 +57,10 @@ import org.junaed.vending_machine.ui.theme.VendingMachineColors
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MachinerySimulationScreen(viewModel: SimRuntimeViewModel) {
+fun MachinerySimulationScreen(
+    viewModel: SimRuntimeViewModel,
+    onClose: () -> Unit = {} // Add onClose callback parameter with default value
+) {
 
     // State for showing toast messages
     var showToast by remember { mutableStateOf(false) }
@@ -76,235 +84,257 @@ fun MachinerySimulationScreen(viewModel: SimRuntimeViewModel) {
                 containerColor = VendingMachineColors.MachineBackground
             )
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                // Header
-                TopAppBar(
-                    title = {
-                        Text(
-                            "Machinery Simulation",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = VendingMachineColors.MachinePanelColor
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Coin Float Section
-                Text(
-                    "Coin Float (0-20 each)",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Coin input fields
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    // Create a numeric field for each denomination
-                    NumericField(
-                        label = "10c",
-                        initialValue = viewModel.coinCounts[Denom.CENT_10] ?: 0,
-                        onValidChange = { newValue ->
-                            viewModel.updateCoinCount(Denom.CENT_10, newValue)
+                    // Header
+                    TopAppBar(
+                        title = {
+                            Text(
+                                "Machinery Simulation",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
                         },
-                        onInvalidInput = {
-                            toastMessage = "0-20 only"
-                            showToast = true
-                        }
-                    )
-
-                    NumericField(
-                        label = "20c",
-                        initialValue = viewModel.coinCounts[Denom.CENT_20] ?: 0,
-                        onValidChange = { newValue ->
-                            viewModel.updateCoinCount(Denom.CENT_20, newValue)
-                        },
-                        onInvalidInput = {
-                            toastMessage = "0-20 only"
-                            showToast = true
-                        }
-                    )
-
-                    NumericField(
-                        label = "50c",
-                        initialValue = viewModel.coinCounts[Denom.CENT_50] ?: 0,
-                        onValidChange = { newValue ->
-                            viewModel.updateCoinCount(Denom.CENT_50, newValue)
-                        },
-                        onInvalidInput = {
-                            toastMessage = "0-20 only"
-                            showToast = true
-                        }
-                    )
-
-                    NumericField(
-                        label = "RM1",
-                        initialValue = viewModel.coinCounts[Denom.RM_1] ?: 0,
-                        onValidChange = { newValue ->
-                            viewModel.updateCoinCount(Denom.RM_1, newValue)
-                        },
-                        onInvalidInput = {
-                            toastMessage = "0-20 only"
-                            showToast = true
-                        }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Drink Stock Section
-                Text(
-                    "Drink Stock (0-20 each)",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Drink stock input fields
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    // Create a numeric field for each brand
-                    NumericField(
-                        label = "Coke",
-                        initialValue = viewModel.canCounts[Brand.COKE] ?: 0,
-                        onValidChange = { newValue ->
-                            viewModel.updateCanCount(Brand.COKE, newValue)
-                        },
-                        onInvalidInput = {
-                            toastMessage = "0-20 only"
-                            showToast = true
-                        }
-                    )
-
-                    NumericField(
-                        label = "Sprite",
-                        initialValue = viewModel.canCounts[Brand.SPRITE] ?: 0,
-                        onValidChange = { newValue ->
-                            viewModel.updateCanCount(Brand.SPRITE, newValue)
-                        },
-                        onInvalidInput = {
-                            toastMessage = "0-20 only"
-                            showToast = true
-                        }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    NumericField(
-                        label = "Vimto",
-                        initialValue = viewModel.canCounts[Brand.VIMTO] ?: 0,
-                        onValidChange = { newValue ->
-                            viewModel.updateCanCount(Brand.VIMTO, newValue)
-                        },
-                        onInvalidInput = {
-                            toastMessage = "0-20 only"
-                            showToast = true
-                        }
-                    )
-
-                    NumericField(
-                        label = "Pepsi",
-                        initialValue = viewModel.canCounts[Brand.PEPSI] ?: 0,
-                        onValidChange = { newValue ->
-                            viewModel.updateCanCount(Brand.PEPSI, newValue)
-                        },
-                        onInvalidInput = {
-                            toastMessage = "0-20 only"
-                            showToast = true
-                        }
-                    )
-
-                    NumericField(
-                        label = "Fanta",
-                        initialValue = viewModel.canCounts[Brand.FANTA] ?: 0,
-                        onValidChange = { newValue ->
-                            viewModel.updateCanCount(Brand.FANTA, newValue)
-                        },
-                        onInvalidInput = {
-                            toastMessage = "0-20 only"
-                            showToast = true
-                        }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Door Lock Control
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Door Locked",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White,
-                        modifier = Modifier.padding(end = 16.dp)
-                    )
-
-                    Checkbox(
-                        checked = viewModel.doorLocked,
-                        onCheckedChange = { isChecked ->
-                            // Only allow checking the box (locking) when door is unlocked
-                            if (isChecked && !viewModel.doorLocked) {
-                                viewModel.lockDoor()
-                            } else if (!isChecked && viewModel.doorLocked) {
-                                viewModel.unlockDoor()
+                        actions = {
+                            // Close button
+                            IconButton(onClick = { onClose() }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Close",
+                                    tint = Color.White
+                                )
                             }
                         },
-                        enabled = !viewModel.doorLocked, // Only enabled when door is unlocked
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = VendingMachineColors.ButtonColor,
-                            uncheckedColor = Color.Gray
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = VendingMachineColors.MachinePanelColor
                         )
                     )
-                }
 
-                // Toast message at the bottom
-                if (showToast) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp)
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Coin Float Section
+                    Text(
+                        "Coin Float (0-20 each)",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Coin input fields
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth(0.7f),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFE74C3C)
-                            ),
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                toastMessage,
-                                color = Color.White,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(8.dp)
+                        // Create a numeric field for each denomination
+                        NumericField(
+                            label = "10c",
+                            initialValue = viewModel.coinCounts[Denom.CENT_10] ?: 0,
+                            onValidChange = { newValue ->
+                                viewModel.updateCoinCount(Denom.CENT_10, newValue)
+                            },
+                            onInvalidInput = {
+                                toastMessage = "0-20 only"
+                                showToast = true
+                            }
+                        )
+
+                        NumericField(
+                            label = "20c",
+                            initialValue = viewModel.coinCounts[Denom.CENT_20] ?: 0,
+                            onValidChange = { newValue ->
+                                viewModel.updateCoinCount(Denom.CENT_20, newValue)
+                            },
+                            onInvalidInput = {
+                                toastMessage = "0-20 only"
+                                showToast = true
+                            }
+                        )
+
+                        NumericField(
+                            label = "50c",
+                            initialValue = viewModel.coinCounts[Denom.CENT_50] ?: 0,
+                            onValidChange = { newValue ->
+                                viewModel.updateCoinCount(Denom.CENT_50, newValue)
+                            },
+                            onInvalidInput = {
+                                toastMessage = "0-20 only"
+                                showToast = true
+                            }
+                        )
+
+                        NumericField(
+                            label = "RM1",
+                            initialValue = viewModel.coinCounts[Denom.RM_1] ?: 0,
+                            onValidChange = { newValue ->
+                                viewModel.updateCoinCount(Denom.RM_1, newValue)
+                            },
+                            onInvalidInput = {
+                                toastMessage = "0-20 only"
+                                showToast = true
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Drink Stock Section
+                    Text(
+                        "Drink Stock (0-20 each)",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Drink stock input fields
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        // Create a numeric field for each brand
+                        NumericField(
+                            label = "Coke",
+                            initialValue = viewModel.canCounts[Brand.COKE] ?: 0,
+                            onValidChange = { newValue ->
+                                viewModel.updateCanCount(Brand.COKE, newValue)
+                            },
+                            onInvalidInput = {
+                                toastMessage = "0-20 only"
+                                showToast = true
+                            }
+                        )
+
+                        NumericField(
+                            label = "Sprite",
+                            initialValue = viewModel.canCounts[Brand.SPRITE] ?: 0,
+                            onValidChange = { newValue ->
+                                viewModel.updateCanCount(Brand.SPRITE, newValue)
+                            },
+                            onInvalidInput = {
+                                toastMessage = "0-20 only"
+                                showToast = true
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        NumericField(
+                            label = "Vimto",
+                            initialValue = viewModel.canCounts[Brand.VIMTO] ?: 0,
+                            onValidChange = { newValue ->
+                                viewModel.updateCanCount(Brand.VIMTO, newValue)
+                            },
+                            onInvalidInput = {
+                                toastMessage = "0-20 only"
+                                showToast = true
+                            }
+                        )
+
+                        NumericField(
+                            label = "Pepsi",
+                            initialValue = viewModel.canCounts[Brand.PEPSI] ?: 0,
+                            onValidChange = { newValue ->
+                                viewModel.updateCanCount(Brand.PEPSI, newValue)
+                            },
+                            onInvalidInput = {
+                                toastMessage = "0-20 only"
+                                showToast = true
+                            }
+                        )
+
+                        NumericField(
+                            label = "Fanta",
+                            initialValue = viewModel.canCounts[Brand.FANTA] ?: 0,
+                            onValidChange = { newValue ->
+                                viewModel.updateCanCount(Brand.FANTA, newValue)
+                            },
+                            onInvalidInput = {
+                                toastMessage = "0-20 only"
+                                showToast = true
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Door Lock Control
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Door Locked",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White,
+                            modifier = Modifier.padding(end = 16.dp)
+                        )
+
+                        Checkbox(
+                            checked = viewModel.doorLocked,
+                            onCheckedChange = { isChecked ->
+                                // Only allow checking the box (locking) when door is unlocked
+                                if (isChecked && !viewModel.doorLocked) {
+                                    viewModel.lockDoor()
+                                } else if (!isChecked && viewModel.doorLocked) {
+                                    viewModel.unlockDoor()
+                                }
+                            },
+                            enabled = !viewModel.doorLocked, // Only enabled when door is unlocked
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = VendingMachineColors.ButtonColor,
+                                uncheckedColor = Color.Gray
                             )
+                        )
+                    }
+
+                    // Toast message at the bottom
+                    if (showToast) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp)
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.7f),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFFE74C3C)
+                                ),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    toastMessage,
+                                    color = Color.White,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
                         }
                     }
+                }
+
+                // Overlay to disable the UI when not running
+                if (!viewModel.isRunning) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.6f))
+                            .alpha(0.6f)
+                    )
                 }
             }
         }
@@ -324,6 +354,39 @@ private fun NumericField(
 ) {
     var textValue by remember { mutableStateOf(initialValue.toString()) }
 
+    // Helper function to validate input and perform updates
+    // Moved here before it's used to resolve the reference error
+    fun validateAndUpdateValue(
+        newValue: String,
+        currentValue: String,
+        onValidChange: (Int) -> Unit,
+        onInvalidInput: () -> Unit
+    ): Boolean {
+        // Handle empty input
+        if (newValue.isEmpty()) {
+            return true // Allow empty field during editing
+        }
+
+        // Trim whitespace and check for non-digit characters
+        val trimmed = newValue.trim()
+        if (trimmed.any { !it.isDigit() }) {
+            onInvalidInput()
+            return false
+        }
+
+        // Parse as integer, handling leading zeros
+        val numericValue = trimmed.toIntOrNull() ?: 0
+
+        // Check if valid (within 0-20 range)
+        if (numericValue in 0..20) {
+            onValidChange(numericValue)
+            return true
+        } else {
+            onInvalidInput()
+            return false
+        }
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -337,20 +400,16 @@ private fun NumericField(
         OutlinedTextField(
             value = textValue,
             onValueChange = { newValue ->
-                // Try to parse as int
-                val parsed = newValue.toIntOrNull()
+                // Use a named lambda function for validation with explicit returns
+                val isValid = validateAndUpdateValue(
+                    newValue = newValue,
+                    currentValue = textValue,
+                    onValidChange = onValidChange,
+                    onInvalidInput = onInvalidInput
+                )
 
-                // Check if valid (empty string is allowed temporarily for editing)
-                if (newValue.isEmpty() || (parsed != null && parsed in 0..20)) {
+                if (isValid) {
                     textValue = newValue
-
-                    // Update the view model if value is valid and not empty
-                    if (newValue.isNotEmpty()) {
-                        onValidChange(newValue.toInt())
-                    }
-                } else {
-                    // Invalid input - notify parent
-                    onInvalidInput()
                 }
             },
             modifier = Modifier.width(60.dp),

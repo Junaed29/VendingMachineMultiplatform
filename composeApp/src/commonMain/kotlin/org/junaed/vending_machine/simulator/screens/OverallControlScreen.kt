@@ -131,16 +131,27 @@ class OverallControlScreen : Screen {
                         color = Color.White
                     )
 
-                    // LED indicator
-                    Box(
-                        modifier = Modifier
-                            .size(16.dp)
-                            .background(
-                                if (viewModel.isRunning) Color(0xFF2ECC71) else Color(0xFFE74C3C),
-                                CircleShape
-                            )
-                            .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape)
-                    )
+                    // LED indicator with text label for accessibility
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .background(
+                                    if (viewModel.isRunning) Color(0xFF2ECC71) else Color(0xFFE74C3C),
+                                    CircleShape
+                                )
+                                .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+                        )
+                        Text(
+                            if (viewModel.isRunning) "ON" else "OFF",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (viewModel.isRunning) Color(0xFF2ECC71) else Color(0xFFE74C3C)
+                        )
+                    }
                 }
             }
 
@@ -167,7 +178,7 @@ class OverallControlScreen : Screen {
                 // Add debouncing effect for BEGIN button
                 if (!beginClickable) {
                     LaunchedEffect(beginClickable) {
-                        delay(500)
+                        delay(300) // Adjusted to 300ms as specified
                         beginClickable = true
                     }
                 }
@@ -187,7 +198,7 @@ class OverallControlScreen : Screen {
                 // Add debouncing effect for END button
                 if (!endClickable) {
                     LaunchedEffect(endClickable) {
-                        delay(500)
+                        delay(300) // Adjusted to 300ms as specified
                         endClickable = true
                     }
                 }
@@ -201,21 +212,21 @@ class OverallControlScreen : Screen {
 
                 // ACTIVATE CUSTOMER PANEL button
                 ControlButton(
-                    text = "ACTIVATE CUSTOMER PANEL PRESS",
+                    text = "ACTIVATED CUSTOMER PANEL PRESS",
                     enabled = viewModel.isRunning,
                     onClick = { customerPanelOpen = true }
                 )
 
                 // ACTIVATE MAINTAINER PANEL button
                 ControlButton(
-                    text = "ACTIVATE MAINTAINER PANEL PRESS",
+                    text = "ACTIVATED MAINTAINER PANEL PRESS",
                     enabled = viewModel.isRunning,
                     onClick = { maintainerPanelOpen = true }
                 )
 
                 // ACTIVATE MACHINERY SIMULATOR PANEL button
                 ControlButton(
-                    text = "ACTIVATE MACHINERY SIMULATOR PANEL PRESS",
+                    text = "ACTIVATED MACHINERY SIMULATOR PANEL PRESS",
                     enabled = viewModel.isRunning,
                     onClick = { machineryPanelOpen = true }
                 )
@@ -313,21 +324,37 @@ class OverallControlScreen : Screen {
             // Open customer panel if requested
             if (customerPanelOpen) {
                 Dialog(onDismissRequest = { customerPanelOpen = false }) {
-                    CustomerPanelScreen(viewModel = viewModel)
+                    // Using dummy screen instead of actual CustomerPanelScreen
+                    DummyPanelScreen(
+                        title = "Customer Panel",
+                        message = "This is a dummy customer panel for testing purposes.",
+                        viewModel = viewModel,
+                        onClose = { customerPanelOpen = false } // Close dialog when X is clicked
+                    )
                 }
             }
 
             // Open maintainer panel if requested
             if (maintainerPanelOpen) {
                 Dialog(onDismissRequest = { maintainerPanelOpen = false }) {
-                    MaintainerPanelScreen(viewModel = viewModel)
+                    // Using dummy screen instead of actual MaintainerPanelScreen
+                    DummyPanelScreen(
+                        title = "Maintainer Panel",
+                        message = "This is a dummy maintainer panel for testing purposes.",
+                        viewModel = viewModel,
+                        onClose = { maintainerPanelOpen = false } // Close dialog when X is clicked
+                    )
                 }
             }
 
             // Open machinery panel if requested
             if (machineryPanelOpen) {
                 Dialog(onDismissRequest = { machineryPanelOpen = false }) {
-                    MachinerySimulationScreen(viewModel = viewModel)
+                    // Using MachinerySimulationScreen as it doesn't affect the database
+                    MachinerySimulationScreen(
+                        viewModel = viewModel,
+                        onClose = { machineryPanelOpen = false } // Close dialog when X is clicked
+                    )
                 }
             }
         }
