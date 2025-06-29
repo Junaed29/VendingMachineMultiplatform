@@ -157,8 +157,35 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "org.junaed.vending_machine"
+            packageName = "DrinkBot"
             packageVersion = "1.0.0"
+
+            macOS {
+                // Set a user-friendly name that will appear in Finder and Applications folder
+                bundleID = "org.junaed.vending_machine"
+                appCategory = "public.app-category.utilities"
+                iconFile.set(project.file("src/desktopMain/resources/icons/DrinkBot.icns"))
+                // Adding more specific icon configuration in Info.plist
+                infoPlist {
+                    extraKeysRawXml = """
+                        <key>CFBundleIconFile</key>
+                        <string>DrinkBot</string>
+                    """
+                }
+                // Add package name to make it appear correctly in Finder
+                packageBuildVersion = "1.0.0"
+                dockName = "DrinkBot"
+            }
+
+            windows {
+                iconFile.set(project.file("src/desktopMain/resources/icons/DrinkBot.ico"))
+                // Friendly application name for Windows
+                menuGroup = "DrinkBot"
+            }
+
+            linux {
+                iconFile.set(project.file("src/commonMain/resources/icons/DrinkBot.png"))
+            }
         }
     }
 }
