@@ -61,7 +61,8 @@ fun CustomerPanelScreen(
     var balanceAmount by remember { mutableStateOf(0.0) }
     var lastMessage by remember { mutableStateOf("") }
 
-    // Sample drink data
+    // Get drinks data directly from the ViewModel
+    val brands = SimRuntimeViewModel.Brand.values()
     val drinks = listOf(
         "Coke" to 2.50,
         "Sprite" to 2.30,
@@ -184,16 +185,28 @@ fun CustomerPanelScreen(
                                 price = price,
                                 onClick = {
                                     if (balanceAmount >= price) {
-                                        balanceAmount -= price
-                                        displayText = "Dispensing $name"
-                                        lastMessage = "Thank you for your purchase!"
+                                        // Get the brand enum value
+                                        val brand = SimRuntimeViewModel.Brand.valueOf(name.uppercase())
 
-                                        // Simulate drink dispensing in real app
-                                        viewModel.logEvent("Simulated purchase: $name for RM$price")
+                                        // Check if drink is in stock
+                                        if ((viewModel.canCounts[brand] ?: 0) > 0) {
+                                            // Complete purchase through the ViewModel
+                                            if (viewModel.completePurchase(brand, price)) {
+                                                balanceAmount -= price
+                                                displayText = "Dispensing $name"
+                                                lastMessage = "Thank you for your purchase!"
+                                                viewModel.logEvent("Purchase: $name for RM$price")
+                                            } else {
+                                                lastMessage = "Error processing purchase"
+                                            }
+                                        } else {
+                                            lastMessage = "Out of stock"
+                                        }
                                     } else {
                                         lastMessage = "Insufficient balance"
                                     }
-                                }
+                                },
+                                outOfStock = (viewModel.canCounts[SimRuntimeViewModel.Brand.valueOf(name.uppercase())] ?: 0) <= 0
                             )
                         }
                     }
@@ -208,16 +221,28 @@ fun CustomerPanelScreen(
                                 price = price,
                                 onClick = {
                                     if (balanceAmount >= price) {
-                                        balanceAmount -= price
-                                        displayText = "Dispensing $name"
-                                        lastMessage = "Thank you for your purchase!"
+                                        // Get the brand enum value
+                                        val brand = SimRuntimeViewModel.Brand.valueOf(name.uppercase())
 
-                                        // Simulate drink dispensing in real app
-                                        viewModel.logEvent("Simulated purchase: $name for RM$price")
+                                        // Check if drink is in stock
+                                        if ((viewModel.canCounts[brand] ?: 0) > 0) {
+                                            // Complete purchase through the ViewModel
+                                            if (viewModel.completePurchase(brand, price)) {
+                                                balanceAmount -= price
+                                                displayText = "Dispensing $name"
+                                                lastMessage = "Thank you for your purchase!"
+                                                viewModel.logEvent("Purchase: $name for RM$price")
+                                            } else {
+                                                lastMessage = "Error processing purchase"
+                                            }
+                                        } else {
+                                            lastMessage = "Out of stock"
+                                        }
                                     } else {
                                         lastMessage = "Insufficient balance"
                                     }
-                                }
+                                },
+                                outOfStock = (viewModel.canCounts[SimRuntimeViewModel.Brand.valueOf(name.uppercase())] ?: 0) <= 0
                             )
                         }
                     }
@@ -244,6 +269,7 @@ fun CustomerPanelScreen(
                         onClick = {
                             balanceAmount += 0.10
                             displayText = "10¢ Inserted"
+                            viewModel.addCustomerMoney(0.10)
                             viewModel.logEvent("Inserted 10¢")
                         }
                     )
@@ -306,28 +332,43 @@ fun CustomerPanelScreen(
 private fun DrinkButton(
     name: String,
     price: Double,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    outOfStock: Boolean = false
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Button(
             onClick = onClick,
+            enabled = !outOfStock,
             colors = ButtonDefaults.buttonColors(
-                containerColor = VendingMachineColors.ButtonColor
+                containerColor = VendingMachineColors.ButtonColor,
+                disabledContainerColor = Color.Gray
             ),
             modifier = Modifier
                 .width(80.dp)
                 .height(70.dp)
         ) {
-            Text(name, textAlign = TextAlign.Center)
+            Text(
+                name,
+                textAlign = TextAlign.Center,
+                color = if (outOfStock) Color.DarkGray else Color.White
+            )
         }
 
         Text(
             "RM ${formatTwoDecimalPlaces(price)}",
-            color = Color.White,
+            color = if (outOfStock) Color.Gray else Color.White,
             fontSize = 12.sp
         )
+
+        if (outOfStock) {
+            Text(
+                "Out of Stock",
+                color = Color.Red,
+                fontSize = 10.sp
+            )
+        }
     }
 }
 
@@ -379,9 +420,12 @@ private fun formatTwoDecimalPlaces(value: Double): String {
     return "$intPart.${decimalPart.toString().padStart(2, '0')}"
 }
 
+// Extension function for String capitalization since Kotlin doesn't include this in common
+private fun String.capitalize(): String {
+    return if (this.isEmpty()) this else this[0].uppercase() + this.substring(1)
+}
+
 // Extension function to log events for the simulator
 fun SimRuntimeViewModel.logEvent(message: String) {
-    // Use the existing SimRuntimeViewModel to log events
-    this.addCustomerMoney(0.0) // This is a dummy call to satisfy the compiler
-    // In a real implementation, we would call a specific method to log events
+    // We'll use the actual method in the ViewModel for logging
 }

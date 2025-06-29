@@ -263,8 +263,8 @@ fun MaintainerPanelScreen(
 
 @Composable
 private fun StockTab(viewModel: SimRuntimeViewModel) {
-    // Sample drink data
-    val drinks = listOf("Coke", "Sprite", "Vimto", "Pepsi", "Fanta")
+    // Get brands from the Enum rather than hardcoding
+    val brands = SimRuntimeViewModel.Brand.values().map { it.name.lowercase().capitalize() }
 
     Column {
         Text(
@@ -276,8 +276,9 @@ private fun StockTab(viewModel: SimRuntimeViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        drinks.forEach { drink ->
-            val count = viewModel.canCounts[SimRuntimeViewModel.Brand.valueOf(drink.uppercase())] ?: 0
+        brands.forEach { drink ->
+            val brand = SimRuntimeViewModel.Brand.valueOf(drink.uppercase())
+            var count = viewModel.canCounts[brand] ?: 0
 
             Row(
                 modifier = Modifier
@@ -293,7 +294,12 @@ private fun StockTab(viewModel: SimRuntimeViewModel) {
 
                 Row {
                     Button(
-                        onClick = { /* Simulated action */ },
+                        onClick = {
+                            if (count > 0) {
+                                viewModel.updateCanCount(brand, count - 1)
+                                count--
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Red
                         ),
@@ -312,7 +318,12 @@ private fun StockTab(viewModel: SimRuntimeViewModel) {
                     )
 
                     Button(
-                        onClick = { /* Simulated action */ },
+                        onClick = {
+                            if (count < 20) {
+                                viewModel.updateCanCount(brand, count + 1)
+                                count++
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Green
                         ),

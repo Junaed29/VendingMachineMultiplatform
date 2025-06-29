@@ -12,18 +12,26 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -64,6 +73,7 @@ class OverallControlScreen : Screen {
     override fun Content() {
         // Create and remember the view model instance
         val viewModel = remember { SimRuntimeViewModel() }
+        val navigator = LocalNavigator.current
 
         // State for opened panels
         var customerPanelOpen by remember { mutableStateOf(false) }
@@ -98,254 +108,283 @@ class OverallControlScreen : Screen {
             }
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(VendingMachineColors.MachineBackground)
-                .padding(16.dp)
-        ) {
-            // Header bar
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = VendingMachineColors.MachinePanelColor
-                ),
-                shape = RoundedCornerShape(8.dp)
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "VMCS Simulator",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { navigator?.pop() }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color.White
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = VendingMachineColors.MachinePanelColor,
+                        titleContentColor = Color.White
+                    )
+                )
+            }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding() // Add padding to avoid system bars
+                    .background(VendingMachineColors.MachineBackground)
+                    .padding(innerPadding)
+                    .padding(16.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Status box with LED indicator
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = VendingMachineColors.MachinePanelColor.copy(alpha = 0.7f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(
-                        "VMCS Simulator",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = Color.White
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Status",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = Color.White
+                        )
+
+                        // LED indicator with text label for accessibility
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .background(
+                                        if (viewModel.isRunning) Color(0xFF2ECC71) else Color(0xFFE74C3C),
+                                        CircleShape
+                                    )
+                                    .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+                            )
+                            Text(
+                                if (viewModel.isRunning) "ON" else "OFF",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (viewModel.isRunning) Color(0xFF2ECC71) else Color(0xFFE74C3C)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Control buttons
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // BEGIN SIMULATION button
+                    ControlButton(
+                        text = "BEGIN SIMULATION PRESS",
+                        enabled = !viewModel.isRunning && beginClickable,
+                        onClick = {
+                            if (beginClickable) {
+                                beginClickable = false
+                                viewModel.startSimulation()
+                            }
+                        }
                     )
 
-                    // LED indicator with text label for accessibility
+                    // Add debouncing effect for BEGIN button
+                    if (!beginClickable) {
+                        LaunchedEffect(beginClickable) {
+                            delay(300) // Adjusted to 300ms as specified
+                            beginClickable = true
+                        }
+                    }
+
+                    // END SIMULATION button
+                    ControlButton(
+                        text = "END SIMULATION PRESS",
+                        enabled = viewModel.isRunning && endClickable,
+                        onClick = {
+                            if (endClickable) {
+                                endClickable = false
+                                viewModel.reset()
+                            }
+                        }
+                    )
+
+                    // Add debouncing effect for END button
+                    if (!endClickable) {
+                        LaunchedEffect(endClickable) {
+                            delay(300) // Adjusted to 300ms as specified
+                            endClickable = true
+                        }
+                    }
+
+                    Divider(
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .padding(vertical = 8.dp),
+                        color = Color.White.copy(alpha = 0.3f)
+                    )
+
+                    // ACTIVATE CUSTOMER PANEL button
+                    ControlButton(
+                        text = "ACTIVATED CUSTOMER PANEL PRESS",
+                        enabled = viewModel.isRunning,
+                        onClick = { customerPanelOpen = true }
+                    )
+
+                    // ACTIVATE MAINTAINER PANEL button
+                    ControlButton(
+                        text = "ACTIVATED MAINTAINER PANEL PRESS",
+                        enabled = viewModel.isRunning,
+                        onClick = { maintainerPanelOpen = true }
+                    )
+
+                    // ACTIVATE MACHINERY SIMULATOR PANEL button
+                    ControlButton(
+                        text = "ACTIVATED MACHINERY SIMULATOR PANEL PRESS",
+                        enabled = viewModel.isRunning,
+                        onClick = { machineryPanelOpen = true }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Status strip
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = VendingMachineColors.MachinePanelColor.copy(alpha = 0.7f)
+                    ),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .background(
-                                    if (viewModel.isRunning) Color(0xFF2ECC71) else Color(0xFFE74C3C),
-                                    CircleShape
-                                )
-                                .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+                        Text(
+                            currentTime.value,
+                            fontSize = 12.sp,
+                            color = VendingMachineColors.DisplayColor
                         )
                         Text(
-                            if (viewModel.isRunning) "ON" else "OFF",
+                            "Door: ${if (viewModel.doorLocked) "Locked" else "Unlocked"}",
                             fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (viewModel.isRunning) Color(0xFF2ECC71) else Color(0xFFE74C3C)
+                            color = VendingMachineColors.DisplayColor
+                        )
+                        Text(
+                            "Cash: RM${formatTwoDecimalPlaces(viewModel.getTotalCoinValue())}",
+                            fontSize = 12.sp,
+                            color = VendingMachineColors.DisplayColor
+                        )
+                        Text(
+                            "Cans: ${viewModel.getTotalCans()}",
+                            fontSize = 12.sp,
+                            color = VendingMachineColors.DisplayColor
                         )
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // Control buttons
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // BEGIN SIMULATION button
-                ControlButton(
-                    text = "BEGIN SIMULATION PRESS",
-                    enabled = !viewModel.isRunning && beginClickable,
-                    onClick = {
-                        if (beginClickable) {
-                            beginClickable = false
-                            viewModel.startSimulation()
-                        }
-                    }
-                )
-
-                // Add debouncing effect for BEGIN button
-                if (!beginClickable) {
-                    LaunchedEffect(beginClickable) {
-                        delay(300) // Adjusted to 300ms as specified
-                        beginClickable = true
-                    }
-                }
-
-                // END SIMULATION button
-                ControlButton(
-                    text = "END SIMULATION PRESS",
-                    enabled = viewModel.isRunning && endClickable,
-                    onClick = {
-                        if (endClickable) {
-                            endClickable = false
-                            viewModel.reset()
-                        }
-                    }
-                )
-
-                // Add debouncing effect for END button
-                if (!endClickable) {
-                    LaunchedEffect(endClickable) {
-                        delay(300) // Adjusted to 300ms as specified
-                        endClickable = true
-                    }
-                }
-
-                Divider(
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .padding(vertical = 8.dp),
-                    color = Color.White.copy(alpha = 0.3f)
-                )
-
-                // ACTIVATE CUSTOMER PANEL button
-                ControlButton(
-                    text = "ACTIVATED CUSTOMER PANEL PRESS",
-                    enabled = viewModel.isRunning,
-                    onClick = { customerPanelOpen = true }
-                )
-
-                // ACTIVATE MAINTAINER PANEL button
-                ControlButton(
-                    text = "ACTIVATED MAINTAINER PANEL PRESS",
-                    enabled = viewModel.isRunning,
-                    onClick = { maintainerPanelOpen = true }
-                )
-
-                // ACTIVATE MACHINERY SIMULATOR PANEL button
-                ControlButton(
-                    text = "ACTIVATED MACHINERY SIMULATOR PANEL PRESS",
-                    enabled = viewModel.isRunning,
-                    onClick = { machineryPanelOpen = true }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Status strip
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = VendingMachineColors.MachinePanelColor.copy(alpha = 0.7f)
-                ),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Row(
+                // Event log window
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceAround
+                        .weight(1f),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Black.copy(alpha = 0.7f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(
-                        currentTime.value,
-                        fontSize = 12.sp,
-                        color = VendingMachineColors.DisplayColor
-                    )
-                    Text(
-                        "Door: ${if (viewModel.doorLocked) "Locked" else "Unlocked"}",
-                        fontSize = 12.sp,
-                        color = VendingMachineColors.DisplayColor
-                    )
-                    Text(
-                        "Cash: RM${formatTwoDecimalPlaces(viewModel.getTotalCoinValue())}",
-                        fontSize = 12.sp,
-                        color = VendingMachineColors.DisplayColor
-                    )
-                    Text(
-                        "Cans: ${viewModel.getTotalCans()}",
-                        fontSize = 12.sp,
-                        color = VendingMachineColors.DisplayColor
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Event log window
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.Black.copy(alpha = 0.7f)
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(8.dp)
-                ) {
-                    Text(
-                        "Event Log",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = VendingMachineColors.DisplayColor,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    LazyColumn(
-                        state = logScrollState,
-                        modifier = Modifier.fillMaxSize()
+                    Column(
+                        modifier = Modifier.padding(8.dp)
                     ) {
-                        if (viewModel.eventLog.isEmpty()) {
-                            item {
-                                Text(
-                                    "No events logged yet. Press BEGIN to start simulation.",
-                                    color = Color.Gray,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(8.dp)
-                                )
-                            }
-                        } else {
-                            items(viewModel.eventLog) { logEntry ->
-                                Text(
-                                    logEntry,
-                                    color = VendingMachineColors.DisplayColor,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(vertical = 2.dp)
-                                )
+                        Text(
+                            "Event Log",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = VendingMachineColors.DisplayColor,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        LazyColumn(
+                            state = logScrollState,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            if (viewModel.eventLog.isEmpty()) {
+                                item {
+                                    Text(
+                                        "No events logged yet. Press BEGIN to start simulation.",
+                                        color = Color.Gray,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(8.dp)
+                                    )
+                                }
+                            } else {
+                                items(viewModel.eventLog) { logEntry ->
+                                    Text(
+                                        logEntry,
+                                        color = VendingMachineColors.DisplayColor,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(vertical = 2.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // Open customer panel if requested
-            if (customerPanelOpen) {
-                Dialog(onDismissRequest = { customerPanelOpen = false }) {
-                    // Using realistic CustomerPanelScreen replica instead of dummy screen
-                    CustomerPanelScreen(
-                        viewModel = viewModel,
-                        onClose = { customerPanelOpen = false }
-                    )
+                // Open customer panel if requested
+                if (customerPanelOpen) {
+                    Dialog(onDismissRequest = { customerPanelOpen = false }) {
+                        // Using realistic CustomerPanelScreen replica instead of dummy screen
+                        CustomerPanelScreen(
+                            viewModel = viewModel,
+                            onClose = { customerPanelOpen = false }
+                        )
+                    }
                 }
-            }
 
-            // Open maintainer panel if requested
-            if (maintainerPanelOpen) {
-                Dialog(onDismissRequest = { maintainerPanelOpen = false }) {
-                    // Using realistic MaintainerPanelScreen replica instead of dummy screen
-                    MaintainerPanelScreen(
-                        viewModel = viewModel,
-                        onClose = { maintainerPanelOpen = false }
-                    )
+                // Open maintainer panel if requested
+                if (maintainerPanelOpen) {
+                    Dialog(onDismissRequest = { maintainerPanelOpen = false }) {
+                        // Using realistic MaintainerPanelScreen replica instead of dummy screen
+                        MaintainerPanelScreen(
+                            viewModel = viewModel,
+                            onClose = { maintainerPanelOpen = false }
+                        )
+                    }
                 }
-            }
 
-            // Open machinery panel if requested
-            if (machineryPanelOpen) {
-                Dialog(onDismissRequest = { machineryPanelOpen = false }) {
-                    // Using MachinerySimulationScreen as before
-                    MachinerySimulationScreen(
-                        viewModel = viewModel,
-                        onClose = { machineryPanelOpen = false }
-                    )
+                // Open machinery panel if requested
+                if (machineryPanelOpen) {
+                    Dialog(onDismissRequest = { machineryPanelOpen = false }) {
+                        // Using MachinerySimulationScreen as before
+                        MachinerySimulationScreen(
+                            viewModel = viewModel,
+                            onClose = { machineryPanelOpen = false }
+                        )
+                    }
                 }
             }
         }
