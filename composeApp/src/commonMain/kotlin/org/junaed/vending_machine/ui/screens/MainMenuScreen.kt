@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import org.junaed.vending_machine.simulator.screens.OverallControlScreen
+import org.junaed.vending_machine.ui.screens.simulator.screens.OverallControlScreen
 import org.junaed.vending_machine.ui.theme.VendingMachineColors
 
 /**

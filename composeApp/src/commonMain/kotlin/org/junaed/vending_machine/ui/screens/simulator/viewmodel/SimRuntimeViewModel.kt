@@ -1,4 +1,4 @@
-package org.junaed.vending_machine.simulator.viewmodel
+package org.junaed.vending_machine.ui.screens.simulator.viewmodel
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf

@@ -1,10 +1,9 @@
-package org.junaed.vending_machine.simulator.resources
+package org.junaed.vending_machine.ui.screens.simulator.resources
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
-import org.junaed.vending_machine.simulator.viewmodel.SimRuntimeViewModel
+import org.junaed.vending_machine.ui.screens.simulator.viewmodel.SimRuntimeViewModel
 
 /**
  * LocalSimRuntimeViewModel - Composition local for providing the simulator view model

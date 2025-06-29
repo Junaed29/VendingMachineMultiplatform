@@ -1,4 +1,4 @@
-package org.junaed.vending_machine.simulator.screens
+package org.junaed.vending_machine.ui.screens.simulator.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,11 +24,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,17 +34,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import cafe.adriel.voyager.core.screen.Screen
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.junaed.vending_machine.simulator.viewmodel.SimRuntimeViewModel
+import org.junaed.vending_machine.ui.screens.simulator.viewmodel.SimRuntimeViewModel
 import org.junaed.vending_machine.ui.theme.VendingMachineColors
 
 /**
@@ -324,12 +319,10 @@ class OverallControlScreen : Screen {
             // Open customer panel if requested
             if (customerPanelOpen) {
                 Dialog(onDismissRequest = { customerPanelOpen = false }) {
-                    // Using dummy screen instead of actual CustomerPanelScreen
-                    DummyPanelScreen(
-                        title = "Customer Panel",
-                        message = "This is a dummy customer panel for testing purposes.",
+                    // Using realistic CustomerPanelScreen replica instead of dummy screen
+                    CustomerPanelScreen(
                         viewModel = viewModel,
-                        onClose = { customerPanelOpen = false } // Close dialog when X is clicked
+                        onClose = { customerPanelOpen = false }
                     )
                 }
             }
@@ -337,12 +330,10 @@ class OverallControlScreen : Screen {
             // Open maintainer panel if requested
             if (maintainerPanelOpen) {
                 Dialog(onDismissRequest = { maintainerPanelOpen = false }) {
-                    // Using dummy screen instead of actual MaintainerPanelScreen
-                    DummyPanelScreen(
-                        title = "Maintainer Panel",
-                        message = "This is a dummy maintainer panel for testing purposes.",
+                    // Using realistic MaintainerPanelScreen replica instead of dummy screen
+                    MaintainerPanelScreen(
                         viewModel = viewModel,
-                        onClose = { maintainerPanelOpen = false } // Close dialog when X is clicked
+                        onClose = { maintainerPanelOpen = false }
                     )
                 }
             }
@@ -350,10 +341,10 @@ class OverallControlScreen : Screen {
             // Open machinery panel if requested
             if (machineryPanelOpen) {
                 Dialog(onDismissRequest = { machineryPanelOpen = false }) {
-                    // Using MachinerySimulationScreen as it doesn't affect the database
+                    // Using MachinerySimulationScreen as before
                     MachinerySimulationScreen(
                         viewModel = viewModel,
-                        onClose = { machineryPanelOpen = false } // Close dialog when X is clicked
+                        onClose = { machineryPanelOpen = false }
                     )
                 }
             }

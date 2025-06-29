@@ -1,4 +1,4 @@
-package org.junaed.vending_machine.simulator.screens
+package org.junaed.vending_machine.ui.screens.simulator.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +30,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,10 +45,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import kotlinx.coroutines.launch
-import org.junaed.vending_machine.simulator.viewmodel.SimRuntimeViewModel
-import org.junaed.vending_machine.simulator.viewmodel.SimRuntimeViewModel.Brand
-import org.junaed.vending_machine.simulator.viewmodel.SimRuntimeViewModel.Denom
+import kotlinx.coroutines.delay
+import org.junaed.vending_machine.ui.screens.simulator.viewmodel.SimRuntimeViewModel
+import org.junaed.vending_machine.ui.screens.simulator.viewmodel.SimRuntimeViewModel.Brand
+import org.junaed.vending_machine.ui.screens.simulator.viewmodel.SimRuntimeViewModel.Denom
 import org.junaed.vending_machine.ui.theme.VendingMachineColors
 
 /**
@@ -68,8 +69,8 @@ fun MachinerySimulationScreen(
 
     // Setup the toast timeout
     if (showToast) {
-        androidx.compose.runtime.LaunchedEffect(Unit) {
-            kotlinx.coroutines.delay(2000)
+        LaunchedEffect(Unit) {
+            delay(2000)
             showToast = false
         }
     }
