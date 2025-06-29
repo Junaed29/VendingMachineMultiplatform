@@ -6,14 +6,19 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +32,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -40,7 +46,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import org.junaed.vending_machine.ui.screens.simulator.viewmodel.SimRuntimeViewModel
 import org.junaed.vending_machine.ui.theme.VendingMachineColors
@@ -78,108 +86,121 @@ fun CustomerPanelScreen(
             containerColor = VendingMachineColors.MachineBackground
         )
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Header with close button
-            TopAppBar(
-                title = {
-                    Text(
-                        "VIMTO Soft Drinks Dispenser",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = VendingMachineColors.MachinePanelColor
-                ),
-                actions = {
-                    IconButton(onClick = { onClose() }) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = Color.White
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "VIMTO Soft Drinks Dispenser",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = VendingMachineColors.MachinePanelColor
+                    ),
+                    actions = {
+                        IconButton(onClick = { onClose() }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = Color.White
+                            )
+                        }
                     }
-                }
-            )
-
+                )
+            }
+        ) { innerPadding ->
             // Main content
-            Column(
+            BoxWithConstraints(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxSize()
+                    .padding(innerPadding)
             ) {
-                // Display screen
-                Card(
+                val screenWidth = maxWidth
+                val isWideScreen = screenWidth > 500.dp
+
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.Black
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(2.dp, VendingMachineColors.MachinePanelColor)
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
+                    // Display screen
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .padding(8.dp)
+                            .widthIn(max = 600.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Black
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(2.dp, VendingMachineColors.MachinePanelColor)
                     ) {
-                        Text(
-                            displayText,
-                            color = VendingMachineColors.DisplayColor,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            "Balance: RM ${formatTwoDecimalPlaces(balanceAmount)}",
-                            color = VendingMachineColors.DisplayColor,
-                            fontSize = 16.sp
-                        )
-
-                        if (lastMessage.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Text(
-                                lastMessage,
-                                color = Color.Yellow,
-                                fontSize = 14.sp,
-                                textAlign = TextAlign.Center
+                                displayText,
+                                color = VendingMachineColors.DisplayColor,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                "Balance: RM ${formatTwoDecimalPlaces(balanceAmount)}",
+                                color = VendingMachineColors.DisplayColor,
+                                fontSize = 16.sp
+                            )
+
+                            if (lastMessage.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    lastMessage,
+                                    color = Color.Yellow,
+                                    fontSize = 14.sp,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                // Drink selection buttons
-                Text(
-                    "Select Your Drink",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                    // Drink selection buttons
+                    Text(
+                        "Select Your Drink",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                // Grid of drink buttons
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                    // Use FlowRow for more adaptive layout of drink buttons
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 600.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        maxItemsInEachRow = if (isWideScreen) 5 else 3,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        drinks.take(3).forEach { (name, price) ->
+                        drinks.forEach { (name, price) ->
                             DrinkButton(
                                 name = name,
                                 price = price,
@@ -206,123 +227,100 @@ fun CustomerPanelScreen(
                                         lastMessage = "Insufficient balance"
                                     }
                                 },
-                                outOfStock = (viewModel.canCounts[SimRuntimeViewModel.Brand.valueOf(name.uppercase())] ?: 0) <= 0
+                                outOfStock = (viewModel.canCounts[SimRuntimeViewModel.Brand.valueOf(name.uppercase())] ?: 0) <= 0,
+                                modifier = Modifier.padding(horizontal = 4.dp)
                             )
                         }
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Coin insertion area
+                    Text(
+                        "Insert Coins",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Adapt coin button layout based on screen size
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 500.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        maxItemsInEachRow = if (screenWidth < 300.dp) 2 else 4,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        drinks.drop(3).forEach { (name, price) ->
-                            DrinkButton(
-                                name = name,
-                                price = price,
-                                onClick = {
-                                    if (balanceAmount >= price) {
-                                        // Get the brand enum value
-                                        val brand = SimRuntimeViewModel.Brand.valueOf(name.uppercase())
+                        CoinButton(
+                            value = 0.10,
+                            onClick = {
+                                balanceAmount += 0.10
+                                displayText = "10¢ Inserted"
+                                viewModel.addCustomerMoney(0.10)
+                                viewModel.logEvent("Inserted 10¢")
+                            }
+                        )
 
-                                        // Check if drink is in stock
-                                        if ((viewModel.canCounts[brand] ?: 0) > 0) {
-                                            // Complete purchase through the ViewModel
-                                            if (viewModel.completePurchase(brand, price)) {
-                                                balanceAmount -= price
-                                                displayText = "Dispensing $name"
-                                                lastMessage = "Thank you for your purchase!"
-                                                viewModel.logEvent("Purchase: $name for RM$price")
-                                            } else {
-                                                lastMessage = "Error processing purchase"
-                                            }
-                                        } else {
-                                            lastMessage = "Out of stock"
-                                        }
-                                    } else {
-                                        lastMessage = "Insufficient balance"
-                                    }
-                                },
-                                outOfStock = (viewModel.canCounts[SimRuntimeViewModel.Brand.valueOf(name.uppercase())] ?: 0) <= 0
-                            )
-                        }
+                        CoinButton(
+                            value = 0.20,
+                            onClick = {
+                                balanceAmount += 0.20
+                                displayText = "20¢ Inserted"
+                                viewModel.logEvent("Inserted 20¢")
+                            }
+                        )
+
+                        CoinButton(
+                            value = 0.50,
+                            onClick = {
+                                balanceAmount += 0.50
+                                displayText = "50¢ Inserted"
+                                viewModel.logEvent("Inserted 50¢")
+                            }
+                        )
+
+                        CoinButton(
+                            value = 1.00,
+                            onClick = {
+                                balanceAmount += 1.00
+                                displayText = "RM1 Inserted"
+                                viewModel.logEvent("Inserted RM1")
+                            }
+                        )
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Cancel button
+                    Button(
+                        onClick = {
+                            if (balanceAmount > 0) {
+                                lastMessage = "Returned RM ${formatTwoDecimalPlaces(balanceAmount)}"
+                                viewModel.logEvent("Returned RM ${formatTwoDecimalPlaces(balanceAmount)}")
+                                balanceAmount = 0.0
+                                displayText = "Insert Coins To Begin"
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Red,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .widthIn(max = 300.dp)
+                    ) {
+                        Text(
+                            "Cancel / Return Coins",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Coin insertion area
-                Text(
-                    "Insert Coins",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    CoinButton(
-                        value = 0.10,
-                        onClick = {
-                            balanceAmount += 0.10
-                            displayText = "10¢ Inserted"
-                            viewModel.addCustomerMoney(0.10)
-                            viewModel.logEvent("Inserted 10¢")
-                        }
-                    )
-
-                    CoinButton(
-                        value = 0.20,
-                        onClick = {
-                            balanceAmount += 0.20
-                            displayText = "20¢ Inserted"
-                            viewModel.logEvent("Inserted 20¢")
-                        }
-                    )
-
-                    CoinButton(
-                        value = 0.50,
-                        onClick = {
-                            balanceAmount += 0.50
-                            displayText = "50¢ Inserted"
-                            viewModel.logEvent("Inserted 50¢")
-                        }
-                    )
-
-                    CoinButton(
-                        value = 1.00,
-                        onClick = {
-                            balanceAmount += 1.00
-                            displayText = "RM1 Inserted"
-                            viewModel.logEvent("Inserted RM1")
-                        }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Cancel button
-                Button(
-                    onClick = {
-                        if (balanceAmount > 0) {
-                            lastMessage = "Returned RM ${formatTwoDecimalPlaces(balanceAmount)}"
-                            viewModel.logEvent("Returned RM ${formatTwoDecimalPlaces(balanceAmount)}")
-                            balanceAmount = 0.0
-                            displayText = "Insert Coins To Begin"
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red,
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text("Cancel / Return Coins")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -333,10 +331,14 @@ private fun DrinkButton(
     name: String,
     price: Double,
     onClick: () -> Unit,
-    outOfStock: Boolean = false
+    outOfStock: Boolean = false,
+    modifier: Modifier = Modifier
 ) {
+    val buttonSize = 70.dp
+
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
     ) {
         Button(
             onClick = onClick,
@@ -346,27 +348,33 @@ private fun DrinkButton(
                 disabledContainerColor = Color.Gray
             ),
             modifier = Modifier
-                .width(80.dp)
-                .height(70.dp)
+                .size(buttonSize)
+                .aspectRatio(1f),
+            shape = RoundedCornerShape(8.dp)
         ) {
             Text(
                 name,
                 textAlign = TextAlign.Center,
-                color = if (outOfStock) Color.DarkGray else Color.White
+                color = if (outOfStock) Color.DarkGray else Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
         Text(
             "RM ${formatTwoDecimalPlaces(price)}",
             color = if (outOfStock) Color.Gray else Color.White,
-            fontSize = 12.sp
+            fontSize = 12.sp,
+            maxLines = 1
         )
 
         if (outOfStock) {
             Text(
                 "Out of Stock",
                 color = Color.Red,
-                fontSize = 10.sp
+                fontSize = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -377,6 +385,9 @@ private fun CoinButton(
     value: Double,
     onClick: () -> Unit
 ) {
+    val coinSizeRange = 42.dp..60.dp
+    val coinSize = min(50.dp, coinSizeRange.endInclusive)
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -388,7 +399,7 @@ private fun CoinButton(
 
         Box(
             modifier = Modifier
-                .size(50.dp)
+                .size(coinSize)
                 .background(coinColor, CircleShape)
                 .border(1.dp, Color.Gray, CircleShape)
                 .padding(8.dp)
@@ -408,7 +419,8 @@ private fun CoinButton(
         Text(
             "RM ${formatTwoDecimalPlaces(value)}",
             fontSize = 10.sp,
-            color = Color.White
+            color = Color.White,
+            maxLines = 1
         )
     }
 }
