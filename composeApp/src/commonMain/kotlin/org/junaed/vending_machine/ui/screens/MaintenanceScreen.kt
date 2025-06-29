@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -50,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
@@ -103,6 +106,14 @@ class MaintenanceScreen : Screen {
         val navigator = LocalNavigator.current
         val windowSize = rememberWindowSize()
         val isDesktop = windowSize == WindowSize.EXPANDED
+        val isTablet = windowSize == WindowSize.MEDIUM
+
+        // Calculate padding based on screen size
+        val horizontalPadding = when {
+            isDesktop -> 32.dp
+            isTablet -> 24.dp
+            else -> 16.dp
+        }
 
         // State variables
         var isAuthenticated by remember { mutableStateOf(viewModel.isMaintenanceMode) }
@@ -127,57 +138,103 @@ class MaintenanceScreen : Screen {
                 )
             }
         ) { innerPadding ->
-            Column(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
                     .padding(innerPadding)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (!isAuthenticated) {
-                    // Login section when not authenticated
-                    PasswordEntrySection(
-                        viewModel = viewModel,
-                        isDesktop = isDesktop,
-                        onAuthenticated = { isAuthenticated = true }
-                    )
+                val maxWidth = this.maxWidth
+                val contentWidth = if (isDesktop || isTablet) maxWidth * 0.85f else maxWidth
+                val isWideScreen = maxWidth >= 840.dp
+
+                // Responsive layout - side-by-side sections for wide screens
+                if (isWideScreen && isAuthenticated) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = horizontalPadding),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Left column - Maintenance info and coin management
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                                .padding(vertical = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            MaintenanceActiveCard(message = viewModel.maintenanceMessage)
+                            CoinManagementSection(viewModel = viewModel)
+                            FinalizeMaintananceButton(
+                                onClick = {
+                                    viewModel.recordMaintenance()
+                                    navigator?.pop()
+                                }
+                            )
+                        }
+
+                        // Right column - Drink inventory and cash collection
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                                .padding(vertical = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            DrinkInventoryAndPriceSection(viewModel = viewModel, isWideScreen = isWideScreen)
+                            CashCollectionSection(
+                                cashDisplay = cashDisplay,
+                                onViewTotalCash = {
+                                    cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.getTotalCash())
+                                },
+                                onCollectCash = {
+                                    cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.collectCash())
+                                }
+                            )
+                        }
+                    }
                 } else {
-                    // Maintenance mode sections when authenticated
-                    MaintenanceActiveCard(message = viewModel.maintenanceMessage)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Coin count section
-                    CoinManagementSection(viewModel = viewModel)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Drink inventory and price management section
-                    DrinkInventoryAndPriceSection(viewModel = viewModel)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Cash collection section
-                    CashCollectionSection(
-                        cashDisplay = cashDisplay,
-                        onViewTotalCash = {
-                            cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.getTotalCash())
-                        },
-                        onCollectCash = {
-                            cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.collectCash())
+                    // Standard vertical layout for narrow screens or login screen
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = horizontalPadding)
+                            .padding(vertical = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        if (!isAuthenticated) {
+                            // Login section when not authenticated
+                            PasswordEntrySection(
+                                viewModel = viewModel,
+                                isDesktop = isDesktop,
+                                onAuthenticated = { isAuthenticated = true }
+                            )
+                        } else {
+                            // Maintenance mode sections when authenticated (vertical layout)
+                            MaintenanceActiveCard(message = viewModel.maintenanceMessage)
+                            CoinManagementSection(viewModel = viewModel)
+                            DrinkInventoryAndPriceSection(viewModel = viewModel, isWideScreen = false)
+                            CashCollectionSection(
+                                cashDisplay = cashDisplay,
+                                onViewTotalCash = {
+                                    cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.getTotalCash())
+                                },
+                                onCollectCash = {
+                                    cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.collectCash())
+                                }
+                            )
+                            FinalizeMaintananceButton(
+                                onClick = {
+                                    viewModel.recordMaintenance()
+                                    navigator?.pop()
+                                }
+                            )
                         }
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Finalize maintenance button
-                    FinalizeMaintananceButton(
-                        onClick = {
-                            viewModel.recordMaintenance()
-                            navigator?.pop()
-                        }
-                    )
+                    }
                 }
             }
         }
@@ -191,7 +248,14 @@ class MaintenanceScreen : Screen {
     @Composable
     private fun MaintenanceTopAppBar(onBackClick: () -> Unit) {
         TopAppBar(
-            title = { Text("Maintainer Panel", fontWeight = FontWeight.Bold) },
+            title = {
+                Text(
+                    "Maintainer Panel",
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back",
@@ -218,13 +282,15 @@ class MaintenanceScreen : Screen {
         // State variables for password entry
         var passwordDigits by remember { mutableStateOf(List(6) { "" }) }
         var isPasswordInvalid by remember { mutableStateOf(false) }
+        var activeFieldIndex by remember { mutableIntStateOf(0) }
 
         // Create focus requesters for each digit field
         val focusRequesters = remember { List(6) { FocusRequester() } }
 
-        // Field size and padding based on platform
-        val digitFieldSize = if (isDesktop) 56.dp else 52.dp
-        val digitFieldPadding = if (isDesktop) 6.dp else 2.dp
+        // Field size and padding based on platform - increased sizes for mobile
+        // Mobile needs larger touch targets for comfortable interaction
+        val digitFieldSize = if (isDesktop) 60.dp else 56.dp
+        val digitFieldPadding = if (isDesktop) 6.dp else 4.dp
 
         // Function to verify password
         val verifyPassword = {
@@ -237,96 +303,268 @@ class MaintenanceScreen : Screen {
             }
         }
 
-        Text(
-            "TYPE PASSWORD HERE",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            color = Color.Black,
-            modifier = Modifier.padding(vertical = 16.dp)
-        )
-
-        // 6-digit password input fields with auto-focus
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 600.dp)
+                .padding(vertical = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.05f)
+            ),
+            shape = RoundedCornerShape(16.dp)
         ) {
-            passwordDigits.forEachIndexed { index, digit ->
-                OutlinedTextField(
-                    value = digit,
-                    onValueChange = { newValue ->
-                        if (newValue.length <= 1 && newValue.all { it.isDigit() }) {
-                            // Update the digit value
-                            val newDigits = passwordDigits.toMutableList()
-                            newDigits[index] = newValue
-                            passwordDigits = newDigits
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "ENTER PASSWORD",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = Color.Black,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
 
-                            // If a digit is entered and not the last field, focus next field
-                            if (newValue.isNotEmpty() && index < passwordDigits.size - 1) {
-                                focusRequesters[index + 1].requestFocus()
+                // Password input fields with adaptive layout
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val maxWidth = this.maxWidth
+                    // Determine dynamic parameters based on screen width
+                    // Use two-row layout for more devices to improve mobile experience
+                    val isNarrowScreen = maxWidth < 400.dp && !isDesktop
+
+                    // Adjust field size for narrower screens
+                    val actualFieldSize = when {
+                        maxWidth < 300.dp -> 48.dp
+                        maxWidth < 360.dp -> 52.dp
+                        else -> digitFieldSize
+                    }
+
+                    // Increased spacing for better touch targets on mobile
+                    val fieldSpacing = if (isDesktop) 8.dp else 12.dp
+
+                    // Split into two rows for mobile and narrower screens for better usability
+                    if (isNarrowScreen) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp) // Increased vertical spacing
+                        ) {
+                            // First row: first 3 digits
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                for (index in 0 until 3) {
+                                    PasswordDigitField(
+                                        digit = passwordDigits[index],
+                                        onValueChange = {
+                                            handleDigitChange(index, it, passwordDigits, focusRequesters) { newDigits ->
+                                                passwordDigits = newDigits
+                                                activeFieldIndex = if (it.isNotEmpty()) index + 1 else index
+                                            }
+                                        },
+                                        focusRequester = focusRequesters[index],
+                                        size = actualFieldSize,
+                                        padding = digitFieldPadding,
+                                        isDesktop = isDesktop,
+                                        isActive = activeFieldIndex == index,
+                                        onNext = {
+                                            if (index < 5) focusRequesters[index + 1].requestFocus()
+                                            else verifyPassword()
+                                        }
+                                    )
+                                }
                             }
-                            // If it's the last field and a digit is entered, auto-submit
-                            else if (newValue.isNotEmpty() && index == passwordDigits.size - 1) {
-                                verifyPassword()
+
+                            // Second row: last 3 digits
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                for (index in 3 until 6) {
+                                    PasswordDigitField(
+                                        digit = passwordDigits[index],
+                                        onValueChange = {
+                                            handleDigitChange(index, it, passwordDigits, focusRequesters) { newDigits ->
+                                                passwordDigits = newDigits
+                                                activeFieldIndex = if (it.isNotEmpty()) index + 1 else index
+                                            }
+                                        },
+                                        focusRequester = focusRequesters[index],
+                                        size = actualFieldSize,
+                                        padding = digitFieldPadding,
+                                        isDesktop = isDesktop,
+                                        isActive = activeFieldIndex == index,
+                                        onNext = {
+                                            if (index < 5) focusRequesters[index + 1].requestFocus()
+                                            else verifyPassword()
+                                        }
+                                    )
+                                }
                             }
                         }
-                    },
-                    singleLine = true,
-                    modifier = Modifier
-                        .size(digitFieldSize)
-                        .focusRequester(focusRequesters[index])
-                        .padding(horizontal = digitFieldPadding),
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        textAlign = TextAlign.Center,
-                        fontSize = if (isDesktop) 18.sp else 16.sp
-                    ),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                        unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f)
-                    ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            }
-        }
+                    } else {
+                        // Single row layout for wider screens
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            passwordDigits.forEachIndexed { index, digit ->
+                                PasswordDigitField(
+                                    digit = digit,
+                                    onValueChange = {
+                                        handleDigitChange(index, it, passwordDigits, focusRequesters) { newDigits ->
+                                            passwordDigits = newDigits
+                                            activeFieldIndex = if (it.isNotEmpty()) index + 1 else index
+                                        }
+                                    },
+                                    focusRequester = focusRequesters[index],
+                                    size = actualFieldSize,
+                                    padding = digitFieldPadding,
+                                    isDesktop = isDesktop,
+                                    isActive = activeFieldIndex == index,
+                                    onNext = {
+                                        if (index < 5) focusRequesters[index + 1].requestFocus()
+                                        else verifyPassword()
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
 
-        // Request focus on first field when screen is shown
-        LaunchedEffect(Unit) {
-            delay(300) // Short delay to ensure UI is ready
-            focusRequesters[0].requestFocus()
-        }
-
-        // Error message for invalid password
-        if (isPasswordInvalid) {
-            Text(
-                "PASSWORD INVALID",
-                color = Color.Red,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            // Clear password fields and refocus first field after showing error
-            LaunchedEffect(isPasswordInvalid) {
-                if (isPasswordInvalid) {
-                    delay(1000) // Show error message for a moment
-                    passwordDigits = List(6) { "" }
-                    delay(300)
+                // Request focus on first field when screen is shown
+                LaunchedEffect(Unit) {
+                    delay(300) // Short delay to ensure UI is ready
                     focusRequesters[0].requestFocus()
-                    isPasswordInvalid = false // Hide error message when clearing fields
+                    activeFieldIndex = 0
+                }
+
+                // Error message for invalid password
+                if (isPasswordInvalid) {
+                    Text(
+                        "INCORRECT PASSWORD",
+                        color = Color.Red,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+
+                    // Clear password fields and refocus first field after showing error
+                    LaunchedEffect(isPasswordInvalid) {
+                        if (isPasswordInvalid) {
+                            delay(1000) // Show error message for a moment
+                            passwordDigits = List(6) { "" }
+                            delay(300)
+                            focusRequesters[0].requestFocus()
+                            activeFieldIndex = 0
+                            isPasswordInvalid = false // Hide error message when clearing fields
+                        }
+                    }
+                } else {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Hint text
+                Text(
+                    "Enter the 6-digit maintenance code",
+                    color = Color.Black.copy(alpha = 0.7f),
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = { verifyPassword() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .widthIn(max = 300.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VendingMachineColors.ButtonColor
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        "VERIFY PASSWORD",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
                 }
             }
         }
+    }
 
-        Spacer(modifier = Modifier.height(16.dp))
+    // Helper function to handle digit input and focus management
+    private fun handleDigitChange(
+        index: Int,
+        newValue: String,
+        currentDigits: List<String>,
+        focusRequesters: List<FocusRequester>,
+        updateDigits: (List<String>) -> Unit
+    ) {
+        if (newValue.length <= 1 && newValue.all { it.isDigit() }) {
+            // Update the digit value
+            val newDigits = currentDigits.toMutableList()
+            newDigits[index] = newValue
+            updateDigits(newDigits)
 
-        Button(
-            onClick = { verifyPassword() },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = VendingMachineColors.ButtonColor
-            ),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Text("VERIFY PASSWORD", fontWeight = FontWeight.Bold)
+            // If a digit is entered and not the last field, focus next field
+            if (newValue.isNotEmpty() && index < currentDigits.size - 1) {
+                focusRequesters[index + 1].requestFocus()
+            }
         }
+    }
+
+    @Composable
+    private fun PasswordDigitField(
+        digit: String,
+        onValueChange: (String) -> Unit,
+        focusRequester: FocusRequester,
+        size: androidx.compose.ui.unit.Dp,
+        padding: androidx.compose.ui.unit.Dp,
+        isDesktop: Boolean,
+        isActive: Boolean = false, // New parameter for active field
+        onNext: () -> Unit = {} // New parameter for next action
+    ) {
+        val activeBorderColor = VendingMachineColors.AccentColor
+        val touchTargetSize = if (isDesktop) size else size + 8.dp // Larger touch target for mobile
+
+        OutlinedTextField(
+            value = digit,
+            onValueChange = onValueChange,
+            singleLine = true,
+            modifier = Modifier
+                .size(touchTargetSize)
+                .focusRequester(focusRequester)
+                .padding(horizontal = padding)
+                // Make the whole area clickable for better mobile experience
+                .clickable(enabled = true, onClick = { focusRequester.requestFocus() })
+                // Visual indication of active field with thicker border
+                .then(if (isActive) Modifier.border(2.dp, activeBorderColor, RoundedCornerShape(8.dp)) else Modifier),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                textAlign = TextAlign.Center,
+                fontSize = 20.sp,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
+            ),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.2f),
+                unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                focusedIndicatorColor = activeBorderColor,
+                unfocusedIndicatorColor = Color.Gray
+            ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            shape = RoundedCornerShape(8.dp)
+        )
     }
 
     //----------------------------------------------------------------------------------------------
@@ -338,34 +576,37 @@ class MaintenanceScreen : Screen {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
+                .widthIn(max = 800.dp)
                 .padding(vertical = 8.dp),
             colors = CardDefaults.cardColors(
                 containerColor = VendingMachineColors.AccessGrantedColor
             ),
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     "MAINTENANCE MODE ACTIVE",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
+                    fontSize = 20.sp,
                     color = Color.White
                 )
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     "Door Unlocked - Access Granted",
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                     color = Color.White
                 )
                 if (message.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         message,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
+                        fontSize = 15.sp,
                         color = Color.White,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 8.dp)
@@ -385,23 +626,25 @@ class MaintenanceScreen : Screen {
         content: @Composable () -> Unit
     ) {
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 800.dp),
             colors = CardDefaults.cardColors(
                 containerColor = VendingMachineColors.MachineBackground
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(20.dp)
             ) {
                 Text(
                     title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = Color.White,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
 
                 content()
@@ -426,40 +669,89 @@ class MaintenanceScreen : Screen {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Radio buttons for denomination selection
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                // 10 Sen radio button
-                CoinRadioButton(
-                    text = "10C",
-                    selected = selectedDenomination == 10,
-                    onClick = { selectedDenomination = 10 }
-                )
+            // Radio buttons for denomination selection - handle narrow screens better
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val maxWidth = this.maxWidth
+                val isNarrowScreen = maxWidth < 400.dp
 
-                // 20 Sen radio button
-                CoinRadioButton(
-                    text = "20C",
-                    selected = selectedDenomination == 20,
-                    onClick = { selectedDenomination = 20 }
-                )
+                if (isNarrowScreen) {
+                    // Stacked layout for very narrow screens (e.g. small phones)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // First row
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            CoinRadioButton(
+                                text = "10C",
+                                selected = selectedDenomination == 10,
+                                onClick = { selectedDenomination = 10 }
+                            )
 
-                // 50 Sen radio button
-                CoinRadioButton(
-                    text = "50C",
-                    selected = selectedDenomination == 50,
-                    onClick = { selectedDenomination = 50 }
-                )
+                            CoinRadioButton(
+                                text = "20C",
+                                selected = selectedDenomination == 20,
+                                onClick = { selectedDenomination = 20 }
+                            )
+                        }
 
-                // 1 Ringgit radio button
-                CoinRadioButton(
-                    text = "RM1",
-                    selected = selectedDenomination == 100,
-                    onClick = { selectedDenomination = 100 }
-                )
+                        // Second row
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            CoinRadioButton(
+                                text = "50C",
+                                selected = selectedDenomination == 50,
+                                onClick = { selectedDenomination = 50 }
+                            )
+
+                            CoinRadioButton(
+                                text = "RM1",
+                                selected = selectedDenomination == 100,
+                                onClick = { selectedDenomination = 100 }
+                            )
+                        }
+                    }
+                } else {
+                    // Standard horizontal layout
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        // 10 Sen radio button
+                        CoinRadioButton(
+                            text = "10C",
+                            selected = selectedDenomination == 10,
+                            onClick = { selectedDenomination = 10 }
+                        )
+
+                        // 20 Sen radio button
+                        CoinRadioButton(
+                            text = "20C",
+                            selected = selectedDenomination == 20,
+                            onClick = { selectedDenomination = 20 }
+                        )
+
+                        // 50 Sen radio button
+                        CoinRadioButton(
+                            text = "50C",
+                            selected = selectedDenomination == 50,
+                            onClick = { selectedDenomination = 50 }
+                        )
+
+                        // 1 Ringgit radio button
+                        CoinRadioButton(
+                            text = "RM1",
+                            selected = selectedDenomination == 100,
+                            onClick = { selectedDenomination = 100 }
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -543,6 +835,7 @@ class MaintenanceScreen : Screen {
             modifier = Modifier
                 .padding(horizontal = 4.dp)
                 .height(40.dp)
+                .widthIn(min = 72.dp)
         ) {
             Text(
                 text = text,
@@ -557,7 +850,7 @@ class MaintenanceScreen : Screen {
     //----------------------------------------------------------------------------------------------
 
     @Composable
-    private fun DrinkInventoryAndPriceSection(viewModel: MaintenanceViewModel) {
+    private fun DrinkInventoryAndPriceSection(viewModel: MaintenanceViewModel, isWideScreen: Boolean) {
         // State for tracking selected brand
         var selectedBrand by remember { mutableStateOf("BRAND 1") } // Default to BRAND 1
         var newPrice by remember { mutableStateOf("") }
@@ -578,8 +871,8 @@ class MaintenanceScreen : Screen {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
-                maxItemsInEachRow = 3,
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                maxItemsInEachRow = if (isWideScreen) 5 else 3,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalArrangement = Arrangement.spacedBy(12.dp) // Added spacing between rows
             ) {
                 // Create radio buttons for each brand
@@ -660,7 +953,9 @@ class MaintenanceScreen : Screen {
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
             )
 
             // Current price display
@@ -683,7 +978,9 @@ class MaintenanceScreen : Screen {
                 },
                 label = { Text("New Price (RM)", color = Color.White) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 400.dp),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
                     unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
@@ -705,7 +1002,9 @@ class MaintenanceScreen : Screen {
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 400.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = VendingMachineColors.ButtonColor
                 ),
@@ -734,11 +1033,14 @@ class MaintenanceScreen : Screen {
             modifier = Modifier
                 .padding(horizontal = 2.dp)
                 .height(40.dp)
+                .widthIn(min = 80.dp)
         ) {
             Text(
                 text = text,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                fontSize = 14.sp
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -816,7 +1118,9 @@ class MaintenanceScreen : Screen {
                         containerColor = VendingMachineColors.ButtonColor
                     ),
                     shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth(0.6f)
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .widthIn(max = 300.dp)
                 ) {
                     Text("Update Coin Quantity", fontWeight = FontWeight.Medium)
                 }
@@ -869,7 +1173,9 @@ class MaintenanceScreen : Screen {
                         cashInDispenser = false
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 500.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = VendingMachineColors.ButtonColor
                 ),
@@ -890,6 +1196,7 @@ class MaintenanceScreen : Screen {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .widthIn(max = 400.dp)
                         .height(60.dp)
                         .background(
                             color = Color.LightGray,
@@ -931,7 +1238,9 @@ class MaintenanceScreen : Screen {
                         cashInDispenser = true
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 500.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = VendingMachineColors.ButtonColor
                 ),
@@ -961,6 +1270,7 @@ class MaintenanceScreen : Screen {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .widthIn(max = 400.dp)
                     .height(100.dp)
                     .background(
                         color = if (cashInDispenser) VendingMachineColors.DisplayColor else Color.LightGray,
@@ -1052,6 +1362,7 @@ class MaintenanceScreen : Screen {
             onClick = onClick,
             modifier = Modifier
                 .fillMaxWidth()
+                .widthIn(max = 400.dp)
                 .height(60.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = VendingMachineColors.AccentColor
@@ -1139,7 +1450,9 @@ class MaintenanceScreen : Screen {
                         containerColor = VendingMachineColors.ButtonColor
                     ),
                     shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth(0.6f)
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .widthIn(max = 300.dp)
                 ) {
                     Text("Update Drink Quantity", fontWeight = FontWeight.Medium)
                 }
