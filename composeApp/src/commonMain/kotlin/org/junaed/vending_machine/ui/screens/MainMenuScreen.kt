@@ -127,10 +127,10 @@ class MainMenuScreen: Screen {
                         onClick = { navigator?.push(OverallControlScreen()) }
                     )
 
-                    // Download section
-                    DownloadSection()
-
                     Spacer(modifier = Modifier.height(48.dp))
+
+                    // Download section moved to right before copyright information
+                    DownloadSection()
 
                     // Copyright information
                     Text(
