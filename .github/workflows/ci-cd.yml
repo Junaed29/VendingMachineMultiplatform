@@ -35,7 +35,7 @@ jobs:
         run: ./gradlew :composeApp:wasmJsBrowserProductionWebpack
 
       - name: Upload Web Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: web-build
           path: composeApp/build/dist/wasmJs/productionExecutable
@@ -79,7 +79,7 @@ jobs:
           BUILD_TOOLS_VERSION: "33.0.0"
 
       - name: Upload APK Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: drinkbot-app
           path: ${{ steps.sign_app.outputs.signedReleaseFile }}
@@ -113,7 +113,7 @@ jobs:
         run: ./gradlew :composeApp:packageDmg
 
       - name: Upload DMG Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: drinkbot-macos
           path: composeApp/build/compose/binaries/main/dmg/*.dmg
@@ -147,7 +147,7 @@ jobs:
         run: ./gradlew :composeApp:packageMsi
 
       - name: Upload EXE/MSI Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: drinkbot-windows
           path: composeApp/build/compose/binaries/main/msi/*.msi
