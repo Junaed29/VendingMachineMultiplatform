@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -24,12 +27,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import org.junaed.vending_machine.ui.screens.simulator.screens.OverallControlScreen
 import org.junaed.vending_machine.ui.theme.VendingMachineColors
+import org.junaed.vending_machine.ui.utils.isWebPlatform
+import org.junaed.vending_machine.ui.utils.openUrlInBrowser
 
 /**
  * Main Menu Screen for the Vending Machine app
@@ -121,6 +127,9 @@ class MainMenuScreen: Screen {
                         onClick = { navigator?.push(OverallControlScreen()) }
                     )
 
+                    // Download section
+                    DownloadSection()
+
                     Spacer(modifier = Modifier.height(48.dp))
 
                     // Copyright information
@@ -150,6 +159,123 @@ class MainMenuScreen: Screen {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
+        }
+    }
+
+    /**
+     * DownloadSection - Displays download buttons for different platforms
+     * Only visible when running on the web platform
+     */
+    @Composable
+    private fun DownloadSection() {
+        // Only show download section when running on web platform
+        if (isWebPlatform()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = VendingMachineColors.MachinePanelColor.copy(alpha = 0.8f)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 4.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        "Download for Other Platforms",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color.White
+                    )
+
+                    Divider(
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f),
+                        color = Color.White.copy(alpha = 0.3f)
+                    )
+
+                    // Horizontal row of download buttons
+                    androidx.compose.foundation.layout.Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Download button for Windows
+                        DownloadButton(
+                            text = "Windows",
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                openUrlInBrowser("https://github.com/vukan-markovic/Github-Android-Action/archive/refs/tags/1.2.zip")
+                            }
+                        )
+
+                        // Download button for Mac
+                        DownloadButton(
+                            text = "Mac",
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                openUrlInBrowser("https://github.com/vukan-markovic/Github-Android-Action/archive/refs/tags/1.2.zip")
+                            }
+                        )
+
+                        // Download button for Android APK
+                        DownloadButton(
+                            text = "Android APK",
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                openUrlInBrowser("https://github.com/vukan-markovic/Github-Android-Action/archive/refs/tags/1.2.zip")
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * DownloadButton - A styled button specifically for download actions
+     */
+    @Composable
+    private fun DownloadButton(
+        text: String,
+        modifier: Modifier = Modifier,
+        onClick: () -> Unit
+    ) {
+        Button(
+            onClick = onClick,
+            modifier = modifier
+                .height(48.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF3498DB), // Blue color for download buttons
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(8.dp),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 2.dp,
+                pressedElevation = 0.dp,
+                hoveredElevation = 4.dp
+            )
+        ) {
+            androidx.compose.foundation.layout.Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                // Download icon could be added here if desired
+                Text(
+                    text = text,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }
