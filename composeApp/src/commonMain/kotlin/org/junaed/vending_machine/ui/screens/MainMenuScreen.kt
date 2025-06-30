@@ -212,7 +212,7 @@ class MainMenuScreen: Screen {
                             text = "Windows",
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                openUrlInBrowser("https://github.com/vukan-markovic/Github-Android-Action/archive/refs/tags/1.2.zip")
+                                openUrlInBrowser("https://github.com/USERNAME/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.msi")
                             }
                         )
 
@@ -221,7 +221,7 @@ class MainMenuScreen: Screen {
                             text = "Mac",
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                openUrlInBrowser("https://github.com/vukan-markovic/Github-Android-Action/archive/refs/tags/1.2.zip")
+                                openUrlInBrowser("https://github.com/USERNAME/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.dmg")
                             }
                         )
 
@@ -230,7 +230,7 @@ class MainMenuScreen: Screen {
                             text = "Android APK",
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                openUrlInBrowser("https://github.com/vukan-markovic/Github-Android-Action/archive/refs/tags/1.2.zip")
+                                openUrlInBrowser("https://github.com/USERNAME/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.apk")
                             }
                         )
                     }

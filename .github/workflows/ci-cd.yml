@@ -1,0 +1,162 @@
+name: DrinkBot CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [ published ]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-web:
+    name: Build Web Version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Build Web
+        run: ./gradlew :composeApp:wasmJsBrowserProductionWebpack
+
+      - name: Upload Web Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: web-build
+          path: composeApp/build/dist/wasmJs/productionExecutable
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: composeApp/build/dist/wasmJs/productionExecutable
+          branch: gh-pages
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Build APK
+        run: ./gradlew :composeApp:assembleRelease
+
+      - name: Sign Android Release
+        uses: r0adkll/sign-android-release@v1
+        id: sign_app
+        with:
+          releaseDirectory: composeApp/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "33.0.0"
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: drinkbot-app
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+
+      - name: Upload APK to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          asset_name: DrinkBot-Vending-Machine.apk
+          tag: ${{ github.ref }}
+
+  build-desktop-mac:
+    name: Build macOS App
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Build macOS App
+        run: ./gradlew :composeApp:packageDmg
+
+      - name: Upload DMG Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: drinkbot-macos
+          path: composeApp/build/compose/binaries/main/dmg/*.dmg
+
+      - name: Upload DMG to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: composeApp/build/compose/binaries/main/dmg/DrinkBot-Vending-Machine.dmg
+          asset_name: DrinkBot-Vending-Machine.dmg
+          tag: ${{ github.ref }}
+
+  build-desktop-windows:
+    name: Build Windows App
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Build Windows App
+        run: ./gradlew :composeApp:packageMsi
+
+      - name: Upload EXE/MSI Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: drinkbot-windows
+          path: composeApp/build/compose/binaries/main/msi/*.msi
+
+      - name: Upload MSI to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: composeApp/build/compose/binaries/main/msi/DrinkBot-Vending-Machine.msi
+          asset_name: DrinkBot-Vending-Machine.msi
+          tag: ${{ github.ref }}
