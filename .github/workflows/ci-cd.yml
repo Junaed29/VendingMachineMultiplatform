@@ -76,7 +76,7 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
         env:
-          BUILD_TOOLS_VERSION: "33.0.0"
+          BUILD_TOOLS_VERSION: "33.0.3"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -123,8 +123,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: composeApp/build/compose/binaries/main/dmg/DrinkBot-Vending-Machine.dmg
-          asset_name: DrinkBot-Vending-Machine.dmg
+          file: composeApp/build/compose/binaries/main/dmg/DrinkBot-1.0.0.dmg
+          asset_name: DrinkBot-1.0.0.dmg
           tag: ${{ github.ref }}
 
   build-desktop-windows:
