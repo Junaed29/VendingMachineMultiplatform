@@ -38,13 +38,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: web-build
-          path: composeApp/build/dist/wasmJs/productionExecutable
+          path: composeApp/build/kotlin-webpack/wasmJs/productionExecutable
 
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: composeApp/build/dist/wasmJs/productionExecutable
+          folder: composeApp/build/kotlin-webpack/wasmJs/productionExecutable
           branch: gh-pages
 
   build-android:
