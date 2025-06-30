@@ -234,9 +234,9 @@ fun MachinerySimulationScreen(
                     ) {
                         NumericField(
                             label = "DrinkBot",
-                            initialValue = viewModel.canCounts[Brand.DrinkBot] ?: 0,
+                            initialValue = viewModel.canCounts[Brand.DRINKBOT] ?: 0,
                             onValidChange = { newValue ->
-                                viewModel.updateCanCount(Brand.DrinkBot, newValue)
+                                viewModel.updateCanCount(Brand.DRINKBOT, newValue)
                             },
                             onInvalidInput = {
                                 toastMessage = "0-20 only"
