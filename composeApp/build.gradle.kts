@@ -122,28 +122,58 @@ kotlin {
 
 android {
     namespace = "org.junaed.vending_machine"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "org.junaed.vending_machine"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
+        minSdk = 24
+        targetSdk = 35  // Using Android 14 as target while testing Android 15 compatibility
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.1"
     }
+
+    signingConfigs {
+        create("release") {
+            // Check if we're building in CI (GitHub Actions)
+            if (System.getenv("CI") == "true") {
+                // Use the keystore file created in the CI/CD workflow
+                storeFile = file("../android-keystore.jks")
+                storePassword = System.getenv("KEY_STORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("KEY_ALIAS") ?: ""
+                keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            } else {
+                // For local development, use your existing keystore
+                storeFile = file("../my-release-key.keystore")
+                storePassword = project.findProperty("STORE_PASSWORD") as String? ?: System.getenv("KEY_STORE_PASSWORD") ?: ""
+                keyAlias = "myalias" // This is your actual key alias from the keystore
+                keyPassword = project.findProperty("KEY_PASSWORD") as String? ?: System.getenv("KEY_PASSWORD") ?: ""
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("debug") {
+            isMinifyEnabled = false
+        }
+        getByName("release") {
+            isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
+
+    buildFeatures {
+        compose = true
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.10"
     }
 }
 
