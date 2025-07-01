@@ -125,15 +125,11 @@ jobs:
           echo "${{ secrets.SIGNING_KEY }}" > keystore.jks.base64
           base64 -d keystore.jks.base64 > android-keystore.jks
 
-      - name: Create local.properties
-        run: |
-          echo "sdk.dir=$ANDROID_HOME" > local.properties
-          echo "signing.keystore=../android-keystore.jks" >> local.properties
-          echo "signing.key.alias=${{ secrets.KEY_ALIAS }}" >> local.properties
-          echo "signing.key.password=${{ secrets.KEY_PASSWORD }}" >> local.properties
-          echo "signing.store.password=${{ secrets.KEY_STORE_PASSWORD }}" >> local.properties
-
       - name: Build signed APK
+        env:
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
         run: ./gradlew :composeApp:assembleRelease
 
       - name: Find APK file

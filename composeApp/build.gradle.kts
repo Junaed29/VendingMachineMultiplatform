@@ -138,9 +138,10 @@ android {
             if (System.getenv("CI") == "true") {
                 // Use the keystore file created in the CI/CD workflow
                 storeFile = file("../android-keystore.jks")
-                storePassword = System.getenv("KEY_STORE_PASSWORD") ?: ""
-                keyAlias = System.getenv("KEY_ALIAS") ?: ""
-                keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+                // Using exactly the same environment variable names as in GitHub workflow
+                storePassword = System.getenv("KEY_STORE_PASSWORD") ?: "VendingMachineMultiplatform"
+                keyAlias = System.getenv("KEY_ALIAS") ?: "myalias"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: "VendingMachineMultiplatform"
             } else {
                 // For local development, use your existing keystore
                 storeFile = file("../my-release-key.keystore")
