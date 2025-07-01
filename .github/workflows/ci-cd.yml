@@ -44,17 +44,37 @@ jobs:
       - name: Build Web
         run: ./gradlew :composeApp:wasmJsBrowserProductionWebpack
 
+      # Debug - List directory structure to find correct build path
+      - name: List build directory
+        run: |
+          echo "Listing potential web build directories:"
+          ls -la composeApp/build/
+          ls -la composeApp/build/dist/ || echo "No dist directory"
+          ls -la composeApp/build/distributions/ || echo "No distributions directory"
+          ls -la composeApp/build/compose/ || echo "No compose directory"
+          ls -la composeApp/build/kotlin-webpack/ || echo "No kotlin-webpack directory"
+
+          # Find the actual build output directory
+          ACTUAL_PATH=$(find composeApp/build -type d -name "productionExecutable" | head -1 || echo "")
+          echo "Found potential build directory: $ACTUAL_PATH"
+          if [ -n "$ACTUAL_PATH" ]; then
+            echo "WEB_BUILD_PATH=$ACTUAL_PATH" >> $GITHUB_ENV
+          else
+            echo "Using default build path"
+            echo "WEB_BUILD_PATH=composeApp/build/distributions/wasmJs/productionExecutable" >> $GITHUB_ENV
+          fi
+
       - name: Upload Web Artifact
         uses: actions/upload-artifact@v4
         with:
           name: web-build
-          path: composeApp/build/dist/wasmJs/productionExecutable
+          path: ${{ env.WEB_BUILD_PATH }}
 
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: composeApp/build/dist/wasmJs/productionExecutable
+          folder: ${{ env.WEB_BUILD_PATH }}
           branch: gh-pages
           token: ${{ secrets.GITHUB_TOKEN }}
 
