@@ -2,101 +2,120 @@
 
 [![Web Demo](https://img.shields.io/badge/Web_Demo-Live-4CC2FF?style=for-the-badge&logo=github)](https://junaed29.github.io/VendingMachineMultiplatform/) 
 [![GitHub Release](https://img.shields.io/github/v/release/Junaed29/VendingMachineMultiplatform?style=for-the-badge)](https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest)
+[![CI/CD Status](https://img.shields.io/github/actions/workflow/status/Junaed29/VendingMachineMultiplatform/ci-cd.yml?branch=main&style=for-the-badge&label=CI%2FCD)](https://github.com/Junaed29/VendingMachineMultiplatform/actions/workflows/ci-cd.yml)
+[![License](https://img.shields.io/github/license/Junaed29/VendingMachineMultiplatform?style=for-the-badge)](LICENSE)
 
-A comprehensive Kotlin Multiplatform application that simulates a vending machine system across Android, iOS, Desktop, and Web platforms. The application simulates the operations of a soft drinks dispenser with full purchasing, maintenance, and simulation capabilities.
+A comprehensive **Kotlin Multiplatform** application that simulates a vending machine system across Android, iOS, Desktop, and Web platforms using **Compose Multiplatform**. Experience the full functionality of a soft drinks dispenser with purchasing, maintenance, and simulation capabilities, all from a single codebase.
 
-## Project Overview
+<div align="center">
+  <!-- Placeholder for screenshots - replace with actual images when available -->
+  <p>
+    <img src="screenshots/android_main.jpg" width="200" alt="Android Screenshot" />
+    <img src="screenshots/ios_main.jpg" width="200" alt="iOS Screenshot" />
+    <img src="screenshots/desktop_main.jpg" width="320" alt="Desktop Screenshot" />
+    <img src="screenshots/web_main.jpg" width="400" alt="Web Screenshot" />
+  </p>
+  
+  <h3>
+    <a href="https://junaed29.github.io/VendingMachineMultiplatform/">Live Web Demo</a>
+    <span> · </span>
+    <a href="https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest">Download</a>
+    <span> · </span>
+    <a href="#features">Features</a>
+  </h3>
+</div>
 
-This vending machine application allows users to:
-- Purchase drinks by inserting virtual coins
-- Validate coins based on Malaysian specifications
-- Perform maintenance operations on the vending machine
-- Simulate vending machine operations
-- Track and view transaction history
+## ✨ Features
 
-## Technology Stack
+This interactive vending machine application provides:
 
-- **Kotlin Multiplatform**: Shared codebase for Android, iOS, Desktop, and Web
-- **Jetpack Compose**: Modern declarative UI toolkit for all platforms
-- **Voyager**: Navigation library for Compose Multiplatform
-- **Kotlinx Serialization**: Cross-platform JSON serialization
-- **Multiplatform Settings**: Cross-platform key-value storage
-- **Kotlinx DateTime**: Cross-platform date and time utilities
+- 🥤 **Virtual Drink Purchasing** - Select and buy drinks using virtual coins
+- 💰 **Realistic Coin Validation** - Based on Malaysian coin specifications
+- 🔧 **Maintenance Mode** - Stock refill, cash collection, and price adjustment
+- 🔍 **Simulation** - Test various vending machine operations and scenarios
+- 📊 **Transaction History** - Track and analyze purchase records
+- 🌐 **Cross-Platform** - Single codebase for Android, iOS, Desktop, and Web
+- 🎨 **Modern UI** - Built with Jetpack Compose/Compose Multiplatform
 
-## Project Structure
+## 🚀 Technology Stack
+
+- **Kotlin Multiplatform** - Share code across all platforms
+- **Compose Multiplatform** - Modern declarative UI for all platforms
+- **Voyager** - Navigation library for Compose applications
+- **Kotlinx Serialization** - Type-safe JSON serialization
+- **Multiplatform Settings** - Key-value storage for all platforms
+- **Kotlinx DateTime** - Cross-platform date and time utilities
+- **Ktor** - Networking library for API calls
+
+## 📱 Supported Platforms
+
+| Platform | Status | Download |
+|----------|--------|----------|
+| Android  | ✅     | [APK](https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.apk) |
+| iOS      | ✅     | Build from source |
+| Windows  | ✅     | [MSI](https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest/download/DrinkBot-1.0.0.msi) |
+| macOS    | ✅     | [DMG](https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest/download/DrinkBot-1.0.0.dmg) |
+| Web      | ✅     | [Web App](https://junaed29.github.io/VendingMachineMultiplatform/) |
+
+## 🧩 Project Architecture
+
+This project follows a clean architecture approach with clear separation of concerns:
 
 ```
 VendingMachineMultiplatform/
-├── build.gradle.kts                // Root build configuration
-├── gradle.properties               // Gradle and project properties
-├── settings.gradle.kts             // Project settings and module config
 ├── composeApp/                     // Main multiplatform module
-│   ├── build.gradle.kts            // Module build configuration
-│   └── src/                        // Source code directory
+│   └── src/                       
 │       ├── commonMain/             // Shared code for all platforms
-│       │   ├── kotlin/org/junaed/vending_machine/
-│       │   │   ├── model/          // Data models
-│       │   │   ├── viewmodel/      // ViewModels for UI state/logic
-│       │   │   ├── logic/          // Business logic
-│       │   │   └── ui/             // UI components
-│       │   │       ├── components/ // Reusable UI components
-│       │   │       ├── screens/    // Full application screens
-│       │   │       ├── theme/      // Theme definitions
-│       │   │       └── utils/      // UI utility classes
-│       ├── androidMain/            // Android-specific code
-│       ├── iosMain/                // iOS-specific code
-│       ├── desktopMain/            // Desktop-specific code
-│       └── wasmJsMain/             // Web/WASM-specific code
-├── iosApp/                         // iOS application wrapper
-│   ├── Configuration/              // iOS configuration
-│   └── iosApp/                     // iOS app entry point
-└── gradle/                         // Gradle configuration
-    └── libs.versions.toml          // Dependencies version catalog
+│       │   └── kotlin/org/junaed/vending_machine/
+│       │       ├── model/          // Domain models and data structures
+│       │       ├── viewmodel/      // UI state management and business logic
+│       │       ├── logic/          // Core business logic
+│       │       └── ui/             // UI components
+│       │           ├── components/ // Reusable UI elements
+│       │           ├── screens/    // Application screens
+│       │           ├── theme/      // Styling and theme definitions
+│       │           └── utils/      // UI utility functions
+│       ├── androidMain/            // Android-specific implementations
+│       ├── iosMain/                // iOS-specific implementations
+│       ├── desktopMain/            // Desktop (JVM) implementations
+│       └── wasmJsMain/             // Web/WASM implementations
 ```
 
-## Component Responsibilities
+### Component Design
 
-### Models (`model/`)
-- `Coin.kt`: Data model for coins with physical properties (diameter, thickness, weight)
-- `DrinkItem.kt`: Data model for drinks available in the vending machine
-- `Transaction.kt`: Data model for tracking vending machine transactions
-- `MaintenanceSettings.kt`: Settings for the vending machine maintenance
+- **Models**: Data structures representing domain entities
+- **ViewModels**: State holders that implement business logic and UI state
+- **Logic**: Platform-independent business rules
+- **UI**: Compose UI components for all platforms
 
-### ViewModels (`viewmodel/`)
-- `VendingMachineViewModel.kt`: Manages state and business logic for vending machine operations
-- `MaintenanceViewModel.kt`: Handles maintenance operations and settings
+## 🛠️ Getting Started
 
-### Business Logic (`logic/`)
-- `CoinRepository.kt`: Handles coin validation based on physical properties
-- `SettingsFactory.kt`: Platform-specific settings implementations
-- Platform-specific settings factories:
-  - `AndroidSettingsFactory.kt`
-  - `IOSSettingsFactory.kt`
-  - `DesktopSettingsFactory.kt`
-  - `WasmJsSettingsFactory.kt`
+### Prerequisites
 
-### UI Components (`ui/`)
-- **Screens**:
-  - `MainMenuScreen.kt`: Entry point with navigation to other screens
-  - `VendingMachineScreen.kt`: Main interface for purchasing drinks
-  - `MaintenanceScreen.kt`: Interface for maintenance operations
-  - `SimulatorScreen.kt`: Simulates vending machine operations
-- **Reusable Components**:
-  - `CoinButton.kt`: UI component for coin insertion
-  - `DrinkSelectionButton.kt`: UI component for selecting drinks
-- **Theme**:
-  - `VendingMachineTheme.kt`: Theme and styling for the application
+- **JDK 11+** (17+ recommended)
+- **Android Studio Arctic Fox+** or **IntelliJ IDEA**
+- **Android SDK** (for Android builds)
+- **Xcode 14+** and **CocoaPods** (for iOS builds, macOS only)
+- **Node.js** and **npm** (for web builds)
 
-### Platform Entry Points
-- `App.kt`: Root composable with navigation setup
-- Android: `MainActivity.kt` and `VendingMachineApp.kt`
-- iOS: Integration through `iosApp/iosApp/iOSApp.swift`
-- Desktop: `desktopMain/main.kt`
-- Web/WASM: `wasmJsMain/main.kt`
+### Development Setup
 
-## How to Run/Build
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Junaed29/VendingMachineMultiplatform.git
+   cd VendingMachineMultiplatform
+   ```
 
-### Android
+2. Open the project in Android Studio or IntelliJ IDEA
+
+3. Create `local.properties` with your SDK path if it doesn't exist:
+   ```properties
+   sdk.dir=/path/to/your/android/sdk
+   ```
+
+### Running the Project
+
+#### Android
 ```bash
 # Build debug APK
 ./gradlew :composeApp:assembleDebug
@@ -104,11 +123,10 @@ VendingMachineMultiplatform/
 # Install on connected device
 ./gradlew :composeApp:installDebug
 
-# Run with Android Studio
-# Open project and run 'composeApp' configuration
+# Run directly with Android Studio
 ```
 
-### iOS
+#### iOS
 ```bash
 # Generate Xcode project
 ./gradlew :composeApp:podInstall
@@ -116,10 +134,10 @@ VendingMachineMultiplatform/
 # Open the project in Xcode
 open iosApp/iosApp.xcodeproj
 
-# Build and run from Xcode on simulator or device
+# Build and run from Xcode
 ```
 
-### Desktop
+#### Desktop
 ```bash
 # Run the desktop application
 ./gradlew :composeApp:run
@@ -128,7 +146,7 @@ open iosApp/iosApp.xcodeproj
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-### Web/WASM
+#### Web/WASM
 ```bash
 # Run development server
 ./gradlew :composeApp:wasmJsBrowserDevelopmentRun
@@ -137,21 +155,38 @@ open iosApp/iosApp.xcodeproj
 ./gradlew :composeApp:wasmJsBrowserProductionWebpack
 ```
 
-## Special Setup Notes
+## 🔄 CI/CD Pipeline
 
-1. **Environment Requirements**:
-   - JDK 11 or newer
-   - Android SDK installed and configured
-   - For iOS builds: macOS with Xcode 14+ and CocoaPods
-   - For web builds: Node.js and npm
+This project uses GitHub Actions for continuous integration and deployment:
 
-2. **First-time Setup**:
-   ```bash
-   # Initialize the project
-   ./gradlew build
-   ```
+- **Automated Builds**: Every push to main branch triggers builds for all platforms
+- **GitHub Pages**: Web version automatically deployed to GitHub Pages
+- **Release Management**: Tags trigger automatic builds and release creation
+- **Release Notes**: Automatic generation of release notes from commit messages
 
-3. **Generated Files**:
-   - `local.properties`: Automatically created, contains path to Android SDK
-   - `build/` directory: Contains compiled code and resources
-   - `kotlin-js-store/`: Contains JavaScript-related dependencies
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 📬 Contact
+
+Junaed - [@Junaed29](https://github.com/Junaed29)
+
+Project Link: [https://github.com/Junaed29/VendingMachineMultiplatform](https://github.com/Junaed29/VendingMachineMultiplatform)
+
+---
+
+<p align="center">
+  Built with ❤️ using <a href="https://kotlinlang.org/docs/multiplatform.html">Kotlin Multiplatform</a> and 
+  <a href="https://github.com/JetBrains/compose-multiplatform">Compose Multiplatform</a>
+</p>
