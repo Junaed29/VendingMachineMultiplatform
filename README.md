@@ -24,7 +24,7 @@ A comprehensive **Kotlin Multiplatform** application that simulates a vending ma
     <a href="https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest">
       <img src="https://img.shields.io/badge/Download_Apps-00C853?style=for-the-badge&logo=android&logoColor=white" alt="Download Apps" />
     </a>
-    <a href="#features">
+    <a href="#-features">
       <img src="https://img.shields.io/badge/View_Features-FF5722?style=for-the-badge&logo=readme&logoColor=white" alt="View Features" />
     </a>
   </p>
