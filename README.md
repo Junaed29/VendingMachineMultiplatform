@@ -1,5 +1,8 @@
 # DrinkBot Vending Machine Multiplatform
 
+[![Web Demo](https://img.shields.io/badge/Web_Demo-Live-4CC2FF?style=for-the-badge&logo=github)](https://junaed29.github.io/VendingMachineMultiplatform/) 
+[![GitHub Release](https://img.shields.io/github/v/release/Junaed29/VendingMachineMultiplatform?style=for-the-badge)](https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest)
+
 A comprehensive Kotlin Multiplatform application that simulates a vending machine system across Android, iOS, Desktop, and Web platforms. The application simulates the operations of a soft drinks dispenser with full purchasing, maintenance, and simulation capabilities.
 
 ## Project Overview

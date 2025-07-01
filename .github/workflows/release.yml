@@ -1,0 +1,259 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*' # Only run on version tags like v1.0.0
+
+jobs:
+  build-web:
+    name: Build Web Version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Cache Konan
+        uses: actions/cache@v3
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Build Web
+        run: ./gradlew :composeApp:wasmJsBrowserProductionWebpack
+
+      - name: Debug - List Build Directories
+        run: |
+          echo "Listing build directories to locate web output..."
+          ls -la composeApp/build
+          find composeApp/build -type d -path "*/wasmJs*" -o -path "*/wasm*"
+          find composeApp/build -name "*.js" | grep -v "node_modules"
+          find composeApp/build -name "*.wasm"
+
+      - name: Create GitHub Pages Deployment
+        run: |
+          echo "Creating GitHub Pages deployment structure..."
+          mkdir -p web-deploy
+          
+          # Copy index.html from source resources
+          cp composeApp/src/wasmJsMain/resources/index.html web-deploy/
+          
+          # Find and copy all JS files (excluding node_modules)
+          echo "Finding and copying JS files..."
+          find composeApp/build -name "*.js" -not -path "*/node_modules/*" -exec cp {} web-deploy/ \;
+          
+          # Find and copy all wasm files
+          echo "Finding and copying WASM files..."
+          find composeApp/build -name "*.wasm" -exec cp {} web-deploy/ \;
+          
+          # Find and copy CSS files (from resources and build)
+          echo "Finding and copying CSS files..."
+          find composeApp/src/wasmJsMain/resources -name "*.css" -exec cp {} web-deploy/ \;
+          find composeApp/build -name "*.css" -exec cp {} web-deploy/ \;
+          
+          # Copy any other necessary web assets
+          echo "Copying any other web assets..."
+          find composeApp/build -name "*.png" -o -name "*.svg" -o -name "*.jpg" -o -name "*.json" -exec cp {} web-deploy/ \; 2>/dev/null || echo "No additional web assets found"
+          
+          echo "Files prepared for GitHub Pages deployment:"
+          ls -la web-deploy/
+
+      - name: Upload Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: web-deploy
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: web-deploy
+          branch: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Cache Konan
+        uses: actions/cache@v3
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Setup Android keystore
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" > keystore.jks.base64
+          base64 -d keystore.jks.base64 > android-keystore.jks
+
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          echo "signing.keystore=../android-keystore.jks" >> local.properties
+          echo "signing.key.alias=${{ secrets.KEY_ALIAS }}" >> local.properties
+          echo "signing.key.password=${{ secrets.KEY_PASSWORD }}" >> local.properties
+          echo "signing.store.password=${{ secrets.KEY_STORE_PASSWORD }}" >> local.properties
+
+      - name: Build signed APK
+        run: ./gradlew :composeApp:assembleRelease
+
+      - name: Find APK file
+        run: |
+          APK_PATH=$(find composeApp/build/outputs/apk/release -name "*.apk" | head -1)
+          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+          echo "APK_FILENAME=$(basename $APK_PATH)" >> $GITHUB_ENV
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: drinkbot-app
+          path: ${{ env.APK_PATH }}
+
+      - name: Upload APK to Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.APK_PATH }}
+          asset_name: DrinkBot-Vending-Machine.apk
+          tag: ${{ github.ref }}
+
+  build-desktop-mac:
+    name: Build macOS App
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Cache Konan
+        uses: actions/cache@v3
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Build macOS App
+        run: ./gradlew :composeApp:packageDmg
+
+      # Search for DMG file dynamically in case name format changes
+      - name: Find DMG file
+        id: find-dmg
+        run: |
+          DMG_PATH=$(find composeApp/build/compose/binaries/main/dmg -name "*.dmg" | head -1)
+          echo "DMG_PATH=$DMG_PATH" >> $GITHUB_ENV
+          echo "DMG_FILENAME=$(basename $DMG_PATH)" >> $GITHUB_ENV
+
+      - name: Upload DMG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: drinkbot-macos
+          path: ${{ env.DMG_PATH }}
+
+      - name: Upload DMG to Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.DMG_PATH }}
+          asset_name: ${{ env.DMG_FILENAME }}
+          tag: ${{ github.ref }}
+
+  build-desktop-windows:
+    name: Build Windows App
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Cache Konan
+        uses: actions/cache@v3
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Find and Set Windows Path Separator
+        shell: bash
+        run: |
+          echo "KONAN_DATA_DIR=$USERPROFILE\\.konan" >> $GITHUB_ENV
+
+      - name: Build Windows App
+        run: ./gradlew :composeApp:packageMsi
+
+      # Search for MSI file dynamically in case name format changes
+      - name: Find MSI file
+        shell: bash
+        run: |
+          MSI_PATH=$(find composeApp/build/compose/binaries/main/msi -name "*.msi" | head -1)
+          echo "MSI_PATH=$MSI_PATH" >> $GITHUB_ENV
+          echo "MSI_FILENAME=$(basename $MSI_PATH)" >> $GITHUB_ENV
+
+      - name: Upload MSI Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: drinkbot-windows
+          path: ${{ env.MSI_PATH }}
+
+      - name: Upload MSI to Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.MSI_PATH }}
+          asset_name: ${{ env.MSI_FILENAME }}
+          tag: ${{ github.ref }}

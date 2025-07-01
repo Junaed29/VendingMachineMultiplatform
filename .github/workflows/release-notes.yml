@@ -1,0 +1,58 @@
+name: Release Notes Generator
+
+on:
+  push:
+    tags:
+      - 'v*' # Run when tag is pushed matching v*, like v1.0.2
+
+jobs:
+  generate-release-notes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Important for generating release notes
+
+      - name: Get previous tag
+        id: previoustag
+        run: |
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -v $CURRENT_TAG | head -n 1)
+          echo "CURRENT_TAG=$CURRENT_TAG" >> $GITHUB_ENV
+          echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_ENV
+
+      - name: Generate release notes content
+        id: generate-notes
+        run: |
+          echo "# DrinkBot Vending Machine Multiplatform - ${{ env.CURRENT_TAG }}" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "## What's New" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          
+          # Get all commits between tags and format them nicely
+          git log ${{ env.PREVIOUS_TAG }}..${{ env.CURRENT_TAG }} --pretty=format:"- %s" | grep -v "Merge" >> RELEASE_NOTES.md
+          
+          echo "" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "## Installation" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "Download the version for your platform:" >> RELEASE_NOTES.md
+          echo "- **Windows**: DrinkBot-1.0.0.msi" >> RELEASE_NOTES.md
+          echo "- **macOS**: DrinkBot-1.0.0.dmg" >> RELEASE_NOTES.md
+          echo "- **Android**: DrinkBot-Vending-Machine.apk" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "Or try the [web version](https://junaed29.github.io/VendingMachineMultiplatform/)" >> RELEASE_NOTES.md
+          
+          cat RELEASE_NOTES.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.CURRENT_TAG }}
+          name: Release ${{ env.CURRENT_TAG }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # The assets will be attached by the main CI/CD workflow
