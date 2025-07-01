@@ -76,6 +76,7 @@ jobs:
           alias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
+          sdkDirectory: /opt/hostedtoolcache/Android/sdk
         env:
           BUILD_TOOLS_VERSION: "30.0.3"
 
