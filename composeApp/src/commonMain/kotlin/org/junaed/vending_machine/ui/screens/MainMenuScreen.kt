@@ -212,7 +212,8 @@ class MainMenuScreen: Screen {
                             text = "Windows",
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                openUrlInBrowser("https://github.com/USERNAME/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.msi")
+                                openUrlInBrowser("https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.msi")
+                                //https://github.com/Junaed29/VendingMachineMultiplatform/releases/download/v1.0.1/DrinkBot-1.0.0.msi
                             }
                         )
 
@@ -221,7 +222,8 @@ class MainMenuScreen: Screen {
                             text = "Mac",
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                openUrlInBrowser("https://github.com/USERNAME/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.dmg")
+                                openUrlInBrowser("https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.dmg")
+                                //https://github.com/Junaed29/VendingMachineMultiplatform/releases/download/v1.0.1/DrinkBot-1.0.0.dmg
                             }
                         )
 
@@ -230,7 +232,8 @@ class MainMenuScreen: Screen {
                             text = "Android APK",
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                openUrlInBrowser("https://github.com/USERNAME/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.apk")
+                                openUrlInBrowser("https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.apk")
+                                //https://github.com/Junaed29/VendingMachineMultiplatform/releases/download/v1.0.1/DrinkBot-Vending-Machine.apk
                             }
                         )
                     }

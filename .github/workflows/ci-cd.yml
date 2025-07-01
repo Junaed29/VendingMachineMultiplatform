@@ -44,37 +44,53 @@ jobs:
       - name: Build Web
         run: ./gradlew :composeApp:wasmJsBrowserProductionWebpack
 
-      # Debug - List directory structure to find correct build path
-      - name: List build directory
+      - name: Debug - List Build Directories
         run: |
-          echo "Listing potential web build directories:"
-          ls -la composeApp/build/
-          ls -la composeApp/build/dist/ || echo "No dist directory"
-          ls -la composeApp/build/distributions/ || echo "No distributions directory"
-          ls -la composeApp/build/compose/ || echo "No compose directory"
-          ls -la composeApp/build/kotlin-webpack/ || echo "No kotlin-webpack directory"
+          echo "Listing build directories to locate web output..."
+          ls -la composeApp/build
+          find composeApp/build -type d -path "*/wasmJs*" -o -path "*/wasm*"
+          find composeApp/build -name "*.js" | grep -v "node_modules"
+          find composeApp/build -name "*.wasm"
 
-          # Find the actual build output directory
-          ACTUAL_PATH=$(find composeApp/build -type d -name "productionExecutable" | head -1 || echo "")
-          echo "Found potential build directory: $ACTUAL_PATH"
-          if [ -n "$ACTUAL_PATH" ]; then
-            echo "WEB_BUILD_PATH=$ACTUAL_PATH" >> $GITHUB_ENV
-          else
-            echo "Using default build path"
-            echo "WEB_BUILD_PATH=composeApp/build/distributions/wasmJs/productionExecutable" >> $GITHUB_ENV
-          fi
+      - name: Create GitHub Pages Deployment
+        run: |
+          echo "Creating GitHub Pages deployment structure..."
+          mkdir -p web-deploy
+          
+          # Copy index.html from source resources
+          cp composeApp/src/wasmJsMain/resources/index.html web-deploy/
+          
+          # Find and copy all JS files (excluding node_modules)
+          echo "Finding and copying JS files..."
+          find composeApp/build -name "*.js" -not -path "*/node_modules/*" -exec cp {} web-deploy/ \;
+          
+          # Find and copy all wasm files
+          echo "Finding and copying WASM files..."
+          find composeApp/build -name "*.wasm" -exec cp {} web-deploy/ \;
+          
+          # Find and copy CSS files (from resources and build)
+          echo "Finding and copying CSS files..."
+          find composeApp/src/wasmJsMain/resources -name "*.css" -exec cp {} web-deploy/ \;
+          find composeApp/build -name "*.css" -exec cp {} web-deploy/ \;
+          
+          # Copy any other necessary web assets
+          echo "Copying any other web assets..."
+          find composeApp/build -name "*.png" -o -name "*.svg" -o -name "*.jpg" -o -name "*.json" -exec cp {} web-deploy/ \; 2>/dev/null || echo "No additional web assets found"
+          
+          echo "Files prepared for GitHub Pages deployment:"
+          ls -la web-deploy/
 
       - name: Upload Web Artifact
         uses: actions/upload-artifact@v4
         with:
           name: web-build
-          path: ${{ env.WEB_BUILD_PATH }}
+          path: web-deploy
 
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: ${{ env.WEB_BUILD_PATH }}
+          folder: web-deploy
           branch: gh-pages
           token: ${{ secrets.GITHUB_TOKEN }}
 
