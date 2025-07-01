@@ -36,6 +36,7 @@ import org.junaed.vending_machine.ui.screens.simulator.screens.OverallControlScr
 import org.junaed.vending_machine.ui.theme.VendingMachineColors
 import org.junaed.vending_machine.ui.utils.isWebPlatform
 import org.junaed.vending_machine.ui.utils.openUrlInBrowser
+import org.junaed.vending_machine.utils.AppConfig
 
 /**
  * Main Menu Screen for the Vending Machine app
@@ -212,8 +213,7 @@ class MainMenuScreen: Screen {
                             text = "Windows",
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                openUrlInBrowser("https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.msi")
-                                //https://github.com/Junaed29/VendingMachineMultiplatform/releases/download/v1.0.1/DrinkBot-1.0.0.msi
+                                openUrlInBrowser(AppConfig.getReleaseDownloadUrl(AppConfig.WINDOWS_ASSET_NAME))
                             }
                         )
 
@@ -222,8 +222,7 @@ class MainMenuScreen: Screen {
                             text = "Mac",
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                openUrlInBrowser("https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.dmg")
-                                //https://github.com/Junaed29/VendingMachineMultiplatform/releases/download/v1.0.1/DrinkBot-1.0.0.dmg
+                                openUrlInBrowser(AppConfig.getReleaseDownloadUrl(AppConfig.MAC_ASSET_NAME))
                             }
                         )
 
@@ -232,8 +231,7 @@ class MainMenuScreen: Screen {
                             text = "Android APK",
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                openUrlInBrowser("https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest/download/DrinkBot-Vending-Machine.apk")
-                                //https://github.com/Junaed29/VendingMachineMultiplatform/releases/download/v1.0.1/DrinkBot-Vending-Machine.apk
+                                openUrlInBrowser(AppConfig.getReleaseDownloadUrl(AppConfig.ANDROID_ASSET_NAME))
                             }
                         )
                     }
