@@ -30,6 +30,16 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Cache Konan
+        uses: actions/cache@v3
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
 
       - name: Build Web
         run: ./gradlew :composeApp:wasmJsBrowserProductionWebpack
@@ -38,13 +48,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: web-build
-          path: composeApp/build/kotlin-webpack/wasmJs/productionExecutable
+          path: composeApp/build/dist/wasmJs/productionExecutable
 
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: composeApp/build/kotlin-webpack/wasmJs/productionExecutable
+          folder: composeApp/build/dist/wasmJs/productionExecutable
           branch: gh-pages
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -63,34 +73,51 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
 
-      - name: Build APK
+      - name: Cache Konan
+        uses: actions/cache@v3
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Setup Android keystore
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" > keystore.jks.base64
+          base64 -d keystore.jks.base64 > android-keystore.jks
+
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          echo "signing.keystore=../android-keystore.jks" >> local.properties
+          echo "signing.key.alias=${{ secrets.KEY_ALIAS }}" >> local.properties
+          echo "signing.key.password=${{ secrets.KEY_PASSWORD }}" >> local.properties
+          echo "signing.store.password=${{ secrets.KEY_STORE_PASSWORD }}" >> local.properties
+
+      - name: Build signed APK
         run: ./gradlew :composeApp:assembleRelease
 
-      - name: Sign Android Release
-        uses: r0adkll/sign-android-release@v1
-        id: sign_app
-        with:
-          releaseDirectory: composeApp/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: "33.0.2"
+      - name: Find APK file
+        run: |
+          APK_PATH=$(find composeApp/build/outputs/apk/release -name "*.apk" | head -1)
+          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+          echo "APK_FILENAME=$(basename $APK_PATH)" >> $GITHUB_ENV
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: drinkbot-app
-          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          path: ${{ env.APK_PATH }}
 
       - name: Upload APK to Release
         if: github.event_name == 'release'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          file: ${{ env.APK_PATH }}
           asset_name: DrinkBot-Vending-Machine.apk
           tag: ${{ github.ref }}
 
@@ -109,23 +136,41 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Cache Konan
+        uses: actions/cache@v3
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
 
       - name: Build macOS App
         run: ./gradlew :composeApp:packageDmg
+
+      # Search for DMG file dynamically in case name format changes
+      - name: Find DMG file
+        id: find-dmg
+        run: |
+          DMG_PATH=$(find composeApp/build/compose/binaries/main/dmg -name "*.dmg" | head -1)
+          echo "DMG_PATH=$DMG_PATH" >> $GITHUB_ENV
+          echo "DMG_FILENAME=$(basename $DMG_PATH)" >> $GITHUB_ENV
 
       - name: Upload DMG Artifact
         uses: actions/upload-artifact@v4
         with:
           name: drinkbot-macos
-          path: composeApp/build/compose/binaries/main/dmg/*.dmg
+          path: ${{ env.DMG_PATH }}
 
       - name: Upload DMG to Release
         if: github.event_name == 'release'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: composeApp/build/compose/binaries/main/dmg/DrinkBot-1.0.0.dmg
-          asset_name: DrinkBot-1.0.0.dmg
+          file: ${{ env.DMG_PATH }}
+          asset_name: ${{ env.DMG_FILENAME }}
           tag: ${{ github.ref }}
 
   build-desktop-windows:
@@ -143,21 +188,44 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Cache Konan
+        uses: actions/cache@v3
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Find and Set Windows Path Separator
+        shell: bash
+        run: |
+          echo "KONAN_DATA_DIR=$USERPROFILE\\.konan" >> $GITHUB_ENV
 
       - name: Build Windows App
         run: ./gradlew :composeApp:packageMsi
 
-      - name: Upload EXE/MSI Artifact
+      # Search for MSI file dynamically in case name format changes
+      - name: Find MSI file
+        shell: bash
+        run: |
+          MSI_PATH=$(find composeApp/build/compose/binaries/main/msi -name "*.msi" | head -1)
+          echo "MSI_PATH=$MSI_PATH" >> $GITHUB_ENV
+          echo "MSI_FILENAME=$(basename $MSI_PATH)" >> $GITHUB_ENV
+
+      - name: Upload MSI Artifact
         uses: actions/upload-artifact@v4
         with:
           name: drinkbot-windows
-          path: composeApp/build/compose/binaries/main/msi/*.msi
+          path: ${{ env.MSI_PATH }}
 
       - name: Upload MSI to Release
         if: github.event_name == 'release'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: composeApp/build/compose/binaries/main/msi/DrinkBot-Vending-Machine.msi
-          asset_name: DrinkBot-Vending-Machine.msi
+          file: ${{ env.MSI_PATH }}
+          asset_name: ${{ env.MSI_FILENAME }}
           tag: ${{ github.ref }}
