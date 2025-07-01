@@ -1,29 +1,47 @@
 # DrinkBot Vending Machine Multiplatform
 
-[![Web Demo](https://img.shields.io/badge/Web_Demo-Live-4CC2FF?style=for-the-badge&logo=github)](https://junaed29.github.io/VendingMachineMultiplatform/) 
+[![Web App](https://img.shields.io/badge/Web_App-Live-4CC2FF?style=for-the-badge&logo=web)](https://junaed29.github.io/VendingMachineMultiplatform/) 
 [![GitHub Release](https://img.shields.io/github/v/release/Junaed29/VendingMachineMultiplatform?style=for-the-badge)](https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest)
 [![CI/CD Status](https://img.shields.io/github/actions/workflow/status/Junaed29/VendingMachineMultiplatform/ci-cd.yml?branch=main&style=for-the-badge&label=CI%2FCD)](https://github.com/Junaed29/VendingMachineMultiplatform/actions/workflows/ci-cd.yml)
 [![License](https://img.shields.io/github/license/Junaed29/VendingMachineMultiplatform?style=for-the-badge)](LICENSE)
 
-A comprehensive **Kotlin Multiplatform** application that simulates a vending machine system across Android, iOS, Desktop, and Web platforms using **Compose Multiplatform**. Experience the full functionality of a soft drinks dispenser with purchasing, maintenance, and simulation capabilities, all from a single codebase.
+A comprehensive **Kotlin Multiplatform** application that simulates a vending machine system across Android, iOS, Desktop, and Web platforms using **Compose Multiplatform**. Featuring coin validation physics, drink selection, maintenance controls, and transaction history—all from a single codebase with 90%+ shared code.
 
 <div align="center">
-  <!-- Placeholder for screenshots - replace with actual images when available -->
+  <!-- Screenshots can be added here in the future
   <p>
     <img src="screenshots/android_main.jpg" width="200" alt="Android Screenshot" />
     <img src="screenshots/ios_main.jpg" width="200" alt="iOS Screenshot" />
     <img src="screenshots/desktop_main.jpg" width="320" alt="Desktop Screenshot" />
     <img src="screenshots/web_main.jpg" width="400" alt="Web Screenshot" />
   </p>
+  -->
   
-  <h3>
-    <a href="https://junaed29.github.io/VendingMachineMultiplatform/">Live Web Demo</a>
-    <span> · </span>
-    <a href="https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest">Download</a>
-    <span> · </span>
-    <a href="#features">Features</a>
-  </h3>
+  <p>
+    <a href="https://junaed29.github.io/VendingMachineMultiplatform/">
+      <img src="https://img.shields.io/badge/Try_Web_App-4CC2FF?style=for-the-badge&logo=web&logoColor=white" alt="Try Web App" />
+    </a>
+    <a href="https://github.com/Junaed29/VendingMachineMultiplatform/releases/latest">
+      <img src="https://img.shields.io/badge/Download_Apps-00C853?style=for-the-badge&logo=android&logoColor=white" alt="Download Apps" />
+    </a>
+    <a href="#features">
+      <img src="https://img.shields.io/badge/View_Features-FF5722?style=for-the-badge&logo=readme&logoColor=white" alt="View Features" />
+    </a>
+  </p>
 </div>
+
+## 📑 Table of Contents
+
+- [Features](#-features)
+- [Key Highlights](#-key-highlights)
+- [Technology Stack](#-technology-stack)
+- [Supported Platforms](#-supported-platforms)
+- [Project Architecture](#-project-architecture)
+- [Getting Started](#-getting-started)
+- [CI/CD Pipeline](#-cicd-pipeline)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Contact](#-contact)
 
 ## ✨ Features
 
@@ -36,6 +54,14 @@ This interactive vending machine application provides:
 - 📊 **Transaction History** - Track and analyze purchase records
 - 🌐 **Cross-Platform** - Single codebase for Android, iOS, Desktop, and Web
 - 🎨 **Modern UI** - Built with Jetpack Compose/Compose Multiplatform
+
+## 🏆 Key Highlights
+
+- **Truly Write Once, Run Anywhere** - Over 90% shared code between platforms
+- **Realistic Physics Simulation** - Accurately validates coins based on physical properties (weight, diameter, thickness)
+- **Adaptive UI** - Responsive design that works across mobile, tablet, desktop, and web interfaces
+- **Modern Development** - Utilizes Kotlin's latest features including coroutines, flow, and serialization
+- **Automated CI/CD** - Complete pipeline from commit to release with automated testing and deployment
 
 ## 🚀 Technology Stack
 
