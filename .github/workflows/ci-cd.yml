@@ -76,9 +76,8 @@ jobs:
           alias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
-          sdkDirectory: /opt/hostedtoolcache/Android/sdk
         env:
-          BUILD_TOOLS_VERSION: "30.0.3"
+          BUILD_TOOLS_VERSION: "33.0.2"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
