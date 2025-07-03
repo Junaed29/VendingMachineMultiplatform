@@ -35,7 +35,11 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -72,6 +76,19 @@ class VendingMachineScreen : Screen {
         val windowSize = rememberWindowSize()
         val isDesktop = windowSize == WindowSize.EXPANDED
 
+        // Power cut simulation state
+        var showPowerCut by remember { mutableStateOf(false) }
+
+        // Handle power cut simulation
+        LaunchedEffect(showPowerCut) {
+            if (showPowerCut) {
+                // Show power cut for 2 seconds then restore
+                kotlinx.coroutines.delay(2000)
+                showPowerCut = false
+                navigator?.pop()
+            }
+        }
+
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -100,24 +117,29 @@ class VendingMachineScreen : Screen {
                 )
             }
         ) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                VendingMachineColors.MachineBackground,
-                                VendingMachineColors.MachineBackground.copy(alpha = 0.8f)
+            Box(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    VendingMachineColors.MachineBackground,
+                                    VendingMachineColors.MachineBackground.copy(alpha = 0.8f)
+                                )
                             )
                         )
-                    )
-            ) {
-                // Choose layout based on device form factor
-                if (isDesktop) {
-                    DesktopLayout(viewModel, innerPadding)
-                } else {
-                    MobileLayout(viewModel, innerPadding)
+                ) {
+                    // Choose layout based on device form factor
+                    if (isDesktop) {
+                        DesktopLayout(viewModel, innerPadding, showPowerCut = { showPowerCut = true })
+                    } else {
+                        MobileLayout(viewModel, innerPadding, showPowerCut = { showPowerCut = true })
+                    }
                 }
+
+                // Power cut overlay
+                PowerCutOverlay(isVisible = showPowerCut)
             }
         }
     }
@@ -125,7 +147,8 @@ class VendingMachineScreen : Screen {
     @Composable
     private fun DesktopLayout(
         viewModel: VendingMachineViewModel,
-        innerPadding: androidx.compose.foundation.layout.PaddingValues
+        innerPadding: androidx.compose.foundation.layout.PaddingValues,
+        showPowerCut: () -> Unit
     ) {
         // Handle the change not available dialog
         ChangeNotAvailableDialog(
@@ -178,6 +201,18 @@ class VendingMachineScreen : Screen {
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // Power cut simulation button
+                Button(
+                    onClick = { showPowerCut() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
+                    Text("SIMULATE POWER CUT", color = Color.White, fontWeight = FontWeight.Bold)
+                }
             }
 
             // Right panel: Drink selection and collection
@@ -216,7 +251,8 @@ class VendingMachineScreen : Screen {
     @Composable
     private fun MobileLayout(
         viewModel: VendingMachineViewModel,
-        innerPadding: androidx.compose.foundation.layout.PaddingValues
+        innerPadding: androidx.compose.foundation.layout.PaddingValues,
+        showPowerCut: () -> Unit
     ) {
         // Handle the change not available dialog
         ChangeNotAvailableDialog(
@@ -286,6 +322,20 @@ class VendingMachineScreen : Screen {
                 dispensedDrink = viewModel.dispensedDrink,
                 viewModel = viewModel
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Power cut simulation button
+            Button(
+                onClick = { showPowerCut() },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Text("SIMULATE POWER CUT", color = Color.White, fontWeight = FontWeight.Bold)
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -780,6 +830,33 @@ class VendingMachineScreen : Screen {
                 color = Color.White,
                 fontWeight = FontWeight.Bold
             )
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // POWER CUT SIMULATION OVERLAY
+    //----------------------------------------------------------------------------------------------
+
+    @Composable
+    private fun PowerCutOverlay(isVisible: Boolean) {
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "Power Outage",
+                    color = Color.Red.copy(alpha = 0.7f),
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

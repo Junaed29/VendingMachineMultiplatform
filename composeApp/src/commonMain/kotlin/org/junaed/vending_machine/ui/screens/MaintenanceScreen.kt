@@ -1,5 +1,10 @@
 package org.junaed.vending_machine.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -119,6 +124,19 @@ class MaintenanceScreen : Screen {
         var isAuthenticated by remember { mutableStateOf(viewModel.isMaintenanceMode) }
         var cashDisplay by remember { mutableStateOf("") }
 
+        // Power cut simulation state
+        var showPowerCut by remember { mutableStateOf(false) }
+
+        // Handle power cut simulation
+        LaunchedEffect(showPowerCut) {
+            if (showPowerCut) {
+                // Show power cut for 2 seconds then restore
+                delay(2000)
+                showPowerCut = false
+                navigator?.pop()
+            }
+        }
+
         // Check if already in maintenance mode when screen is shown
         LaunchedEffect(Unit) {
             if (viewModel.isMaintenanceMode) {
@@ -138,104 +156,148 @@ class MaintenanceScreen : Screen {
                 )
             }
         ) { innerPadding ->
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                val maxWidth = this.maxWidth
-                val contentWidth = if (isDesktop || isTablet) maxWidth * 0.85f else maxWidth
-                val isWideScreen = maxWidth >= 840.dp
+            // Apply the power cut overlay on top of everything when active
+            Box(modifier = Modifier.fillMaxSize()) {
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    val maxWidth = this.maxWidth
+                    val contentWidth = if (isDesktop || isTablet) maxWidth * 0.85f else maxWidth
+                    val isWideScreen = maxWidth >= 840.dp
 
-                // Responsive layout - side-by-side sections for wide screens
-                if (isWideScreen && isAuthenticated) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = horizontalPadding),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        // Left column - Maintenance info and coin management
+                    // Responsive layout - side-by-side sections for wide screens
+                    if (isWideScreen && isAuthenticated) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = horizontalPadding),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Left column - Maintenance info and coin management
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(vertical = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                MaintenanceActiveCard(message = viewModel.maintenanceMessage)
+                                CoinManagementSection(viewModel = viewModel)
+
+                                // Add power cut simulation button
+                                Button(
+                                    onClick = { showPowerCut = true },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Red
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.8f)
+                                        .widthIn(max = 400.dp)
+                                        .padding(vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        "SIMULATE POWER CUT",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp
+                                    )
+                                }
+
+                                FinalizeMaintananceButton(
+                                    onClick = {
+                                        viewModel.recordMaintenance()
+                                        navigator?.pop()
+                                    }
+                                )
+                            }
+
+                            // Right column - Drink inventory and cash collection
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(vertical = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                DrinkInventoryAndPriceSection(viewModel = viewModel, isWideScreen = isWideScreen)
+                                CashCollectionSection(
+                                    cashDisplay = cashDisplay,
+                                    onViewTotalCash = {
+                                        cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.getTotalCash())
+                                    },
+                                    onCollectCash = {
+                                        cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.collectCash())
+                                    }
+                                )
+                            }
+                        }
+                    } else {
+                        // Standard vertical layout for narrow screens or login screen
                         Column(
                             modifier = Modifier
-                                .weight(1f)
+                                .fillMaxSize()
                                 .verticalScroll(rememberScrollState())
+                                .padding(horizontal = horizontalPadding)
                                 .padding(vertical = 16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            MaintenanceActiveCard(message = viewModel.maintenanceMessage)
-                            CoinManagementSection(viewModel = viewModel)
-                            FinalizeMaintananceButton(
-                                onClick = {
-                                    viewModel.recordMaintenance()
-                                    navigator?.pop()
-                                }
-                            )
-                        }
+                            if (!isAuthenticated) {
+                                // Login section when not authenticated
+                                PasswordEntrySection(
+                                    viewModel = viewModel,
+                                    isDesktop = isDesktop,
+                                    onAuthenticated = { isAuthenticated = true }
+                                )
+                            } else {
+                                // Maintenance mode sections when authenticated (vertical layout)
+                                MaintenanceActiveCard(message = viewModel.maintenanceMessage)
+                                CoinManagementSection(viewModel = viewModel)
+                                DrinkInventoryAndPriceSection(viewModel = viewModel, isWideScreen = false)
+                                CashCollectionSection(
+                                    cashDisplay = cashDisplay,
+                                    onViewTotalCash = {
+                                        cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.getTotalCash())
+                                    },
+                                    onCollectCash = {
+                                        cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.collectCash())
+                                    }
+                                )
 
-                        // Right column - Drink inventory and cash collection
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .verticalScroll(rememberScrollState())
-                                .padding(vertical = 16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            DrinkInventoryAndPriceSection(viewModel = viewModel, isWideScreen = isWideScreen)
-                            CashCollectionSection(
-                                cashDisplay = cashDisplay,
-                                onViewTotalCash = {
-                                    cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.getTotalCash())
-                                },
-                                onCollectCash = {
-                                    cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.collectCash())
+                                // Add power cut simulation button
+                                Button(
+                                    onClick = { showPowerCut = true },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Red
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.8f)
+                                        .widthIn(max = 400.dp)
+                                        .padding(vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        "SIMULATE POWER CUT",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp
+                                    )
                                 }
-                            )
-                        }
-                    }
-                } else {
-                    // Standard vertical layout for narrow screens or login screen
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = horizontalPadding)
-                            .padding(vertical = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        if (!isAuthenticated) {
-                            // Login section when not authenticated
-                            PasswordEntrySection(
-                                viewModel = viewModel,
-                                isDesktop = isDesktop,
-                                onAuthenticated = { isAuthenticated = true }
-                            )
-                        } else {
-                            // Maintenance mode sections when authenticated (vertical layout)
-                            MaintenanceActiveCard(message = viewModel.maintenanceMessage)
-                            CoinManagementSection(viewModel = viewModel)
-                            DrinkInventoryAndPriceSection(viewModel = viewModel, isWideScreen = false)
-                            CashCollectionSection(
-                                cashDisplay = cashDisplay,
-                                onViewTotalCash = {
-                                    cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.getTotalCash())
-                                },
-                                onCollectCash = {
-                                    cashDisplay = "RM " + formatToTwoDecimalPlaces(viewModel.collectCash())
-                                }
-                            )
-                            FinalizeMaintananceButton(
-                                onClick = {
-                                    viewModel.recordMaintenance()
-                                    navigator?.pop()
-                                }
-                            )
+
+                                FinalizeMaintananceButton(
+                                    onClick = {
+                                        viewModel.recordMaintenance()
+                                        navigator?.pop()
+                                    }
+                                )
+                            }
                         }
                     }
                 }
+
+                // Power cut overlay
+                PowerCutOverlay(isVisible = showPowerCut)
             }
         }
     }
@@ -1569,6 +1631,33 @@ class MaintenanceScreen : Screen {
                 ) {
                     Text("Update Drink Quantity", fontWeight = FontWeight.Medium)
                 }
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // POWER CUT SIMULATION OVERLAY
+    //----------------------------------------------------------------------------------------------
+
+    @Composable
+    private fun PowerCutOverlay(isVisible: Boolean) {
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "Power Outage",
+                    color = Color.Red.copy(alpha = 0.7f),
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

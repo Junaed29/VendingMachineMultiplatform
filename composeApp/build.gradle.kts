@@ -128,8 +128,8 @@ android {
         applicationId = "org.junaed.vending_machine"
         minSdk = 24
         targetSdk = 35  // Using Android 14 as target while testing Android 15 compatibility
-        versionCode = 1
-        versionName = "1.0.1"
+        versionCode = 2
+        versionName = "1.0.3"
     }
 
     signingConfigs {
