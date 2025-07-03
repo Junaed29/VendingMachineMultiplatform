@@ -90,7 +90,7 @@ fun DrinkSelectionButton(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "RM ${drinkItem.price}",
+                        text = "${(drinkItem.price.toDouble() * 100).toInt()}c",
                         color = Color(0xFFE74C3C),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
