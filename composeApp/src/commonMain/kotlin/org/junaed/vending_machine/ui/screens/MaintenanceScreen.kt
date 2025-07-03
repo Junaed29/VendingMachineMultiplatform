@@ -284,6 +284,10 @@ class MaintenanceScreen : Screen {
         var isPasswordInvalid by remember { mutableStateOf(false) }
         var activeFieldIndex by remember { mutableIntStateOf(0) }
 
+        // New state variables for toast-like messages
+        var showPasswordMessage by remember { mutableStateOf(false) }
+        var isPasswordValid by remember { mutableStateOf(false) }
+
         // Create focus requesters for each digit field
         val focusRequesters = remember { List(6) { FocusRequester() } }
 
@@ -296,10 +300,34 @@ class MaintenanceScreen : Screen {
         val verifyPassword = {
             val password = passwordDigits.joinToString("")
             if (viewModel.validatePassword(password)) {
-                isPasswordInvalid = false
-                onAuthenticated()
+                isPasswordValid = true
+                showPasswordMessage = true
+                // Authentication will be handled after showing the "PASSWORD VALID" message
             } else {
+                isPasswordValid = false
+                showPasswordMessage = true
                 isPasswordInvalid = true
+            }
+        }
+
+        // Handle the toast message visibility and actions
+        LaunchedEffect(showPasswordMessage) {
+            if (showPasswordMessage) {
+                // Show message for a short duration
+                delay(1000)
+                showPasswordMessage = false
+
+                if (isPasswordValid) {
+                    // If password was valid, authenticate after showing message
+                    onAuthenticated()
+                } else {
+                    // If password was invalid, clear fields and reset focus
+                    passwordDigits = List(6) { "" }
+                    delay(300)
+                    focusRequesters[0].requestFocus()
+                    activeFieldIndex = 0
+                    isPasswordInvalid = false
+                }
             }
         }
 
@@ -444,8 +472,25 @@ class MaintenanceScreen : Screen {
                     activeFieldIndex = 0
                 }
 
-                // Error message for invalid password
-                if (isPasswordInvalid) {
+                // Display toast-like message for password validation
+                if (showPasswordMessage) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isPasswordValid) "PASSWORD VALID" else "PASSWORD INVALID",
+                            color = if (isPasswordValid) Color(0xFF4CAF50) else Color.Red,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                    }
+                }
+                // Keep the original error message UI for backward compatibility but don't show it
+                // when showPasswordMessage is true
+                else if (isPasswordInvalid) {
                     Text(
                         "INCORRECT PASSWORD",
                         color = Color.Red,
