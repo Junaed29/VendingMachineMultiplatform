@@ -840,6 +840,46 @@ class MaintenanceScreen : Screen {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Add increment button for coin count
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = {
+                        val currentCount = viewModel.coinsByDenomination[selectedDenomination] ?: 0
+                        if (currentCount < 20) {
+                            viewModel.updateCoinQuantity(selectedDenomination, currentCount + 1)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VendingMachineColors.ButtonColor,
+                        disabledContainerColor = Color.Gray
+                    ),
+                    enabled = (viewModel.coinsByDenomination[selectedDenomination] ?: 0) < 20,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .widthIn(max = 200.dp)
+                        .padding(horizontal = 4.dp)
+                ) {
+                    Text("Add Coin", fontWeight = FontWeight.Medium)
+                }
+            }
+
+            // Show max coin message if at limit
+            if ((viewModel.coinsByDenomination[selectedDenomination] ?: 0) >= 20) {
+                Text(
+                    text = "Maximum coin limit reached (20)",
+                    color = Color.Red,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(top = 8.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             /*
             // Update quantity field for the selected denomination
             CoinQuantityUpdateField(
@@ -1435,53 +1475,81 @@ class MaintenanceScreen : Screen {
         // State variables for the update field
         var newValue by remember(selectedBrand) { mutableStateOf("$currentCount") }
         var showUpdateField by remember(selectedBrand) { mutableStateOf(false) }
+        var errorMessage by remember { mutableStateOf("") }
 
         if (showUpdateField) {
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    "New Quantity: ",
-                    color = Color.White,
-                    fontWeight = FontWeight.Medium
-                )
-
-                OutlinedTextField(
-                    value = newValue,
-                    onValueChange = { value ->
-                        if (value.isEmpty() || value.all { it.isDigit() }) {
-                            newValue = value
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.width(100.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                        unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    ),
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Button(
-                    onClick = {
-                        val quantity = newValue.toIntOrNull() ?: 0
-                        if (quantity >= 0 && onUpdateQuantity(quantity)) {
-                            showUpdateField = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VendingMachineColors.ButtonColor
-                    ),
-                    shape = RoundedCornerShape(4.dp),
-                    modifier = Modifier.padding(4.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Save", fontSize = 12.sp)
+                    Text(
+                        "New Quantity: ",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    OutlinedTextField(
+                        value = newValue,
+                        onValueChange = { value ->
+                            if (value.isEmpty() || value.all { it.isDigit() }) {
+                                newValue = value
+                                errorMessage = ""
+
+                                // Check for maximum value of 20
+                                value.toIntOrNull()?.let {
+                                    if (it > 20) {
+                                        errorMessage = "Maximum 20 cans allowed"
+                                    }
+                                }
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.width(100.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                            unfocusedContainerColor = VendingMachineColors.AccentColor.copy(alpha = 0.1f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true,
+                        isError = errorMessage.isNotEmpty()
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(
+                        onClick = {
+                            val quantity = newValue.toIntOrNull() ?: 0
+                            if (quantity >= 0 && quantity <= 20 && onUpdateQuantity(quantity)) {
+                                showUpdateField = false
+                            } else if (quantity > 20) {
+                                errorMessage = "Maximum 20 cans allowed"
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = VendingMachineColors.ButtonColor
+                        ),
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.padding(4.dp),
+                        enabled = errorMessage.isEmpty()
+                    ) {
+                        Text("Save", fontSize = 12.sp)
+                    }
+                }
+
+                // Display error message if any
+                if (errorMessage.isNotEmpty()) {
+                    Text(
+                        text = errorMessage,
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
                 }
             }
         } else {
