@@ -1108,7 +1108,13 @@ class MaintenanceScreen : Screen {
             // Current price display
             val currentPrice = viewModel.drinkPriceSettings[selectedBrand] ?: 0.0
             Text(
-                "Current Price: RM ${formatToTwoDecimalPlaces(currentPrice)}",
+                text = if (currentPrice < 1.0) {
+                    // For prices less than 1 RM, display in cents (e.g., 50c)
+                    "Current Price: ${(currentPrice * 100).toInt()}c"
+                } else {
+                    // For prices 1 RM and above, display in ringgit (e.g., RM 1.50)
+                    "Current Price: RM ${formatToTwoDecimalPlaces(currentPrice)}"
+                },
                 color = VendingMachineColors.DisplayColor,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(vertical = 8.dp)

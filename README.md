@@ -49,7 +49,7 @@ This interactive vending machine application provides:
 
 - 🥤 **Virtual Drink Purchasing** - Select and buy drinks using virtual coins
 - 💰 **Realistic Coin Validation** - Based on Malaysian coin specifications
-- 🔧 **Maintenance Mode** - Stock refill, cash collection, and price adjustment
+- 🔧 **Maintenance Mode** - Stock refill, cash collection, and price adjustment (Password: 123456)
 - 🔍 **Simulation** - Test various vending machine operations and scenarios
 - 📊 **Transaction History** - Track and analyze purchase records
 - 🌐 **Cross-Platform** - Single codebase for Android, iOS, Desktop, and Web
