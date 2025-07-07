@@ -129,7 +129,7 @@ android {
         minSdk = 24
         targetSdk = 35  // Using Android 14 as target while testing Android 15 compatibility
         versionCode = 2
-        versionName = "1.0.3"
+        versionName = "1.0.5"
     }
 
     signingConfigs {
