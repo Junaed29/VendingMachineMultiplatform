@@ -50,7 +50,7 @@ fun DrinkSelectionButton(
 
     // Status text for drink availability
     val statusText = when {
-        !inStock -> "OUT OF STOCK"
+        !inStock -> "NOT IN STOCK"
         isSelected -> "SELECTED"
         !isSelectable -> "NOT SELECTABLE"
         else -> ""

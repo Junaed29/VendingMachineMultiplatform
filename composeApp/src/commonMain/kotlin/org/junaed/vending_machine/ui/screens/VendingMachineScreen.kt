@@ -53,6 +53,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import org.junaed.vending_machine.logic.CoinRepository
 import org.junaed.vending_machine.ui.components.CoinButton
 import org.junaed.vending_machine.ui.components.DrinkSelectionButton
+import org.junaed.vending_machine.ui.screens.simulator.screens.OverallControlScreen
 import org.junaed.vending_machine.ui.theme.VendingMachineColors
 import org.junaed.vending_machine.ui.utils.WindowSize
 import org.junaed.vending_machine.ui.utils.rememberWindowSize
@@ -85,6 +86,8 @@ class VendingMachineScreen : Screen {
                 // Show power cut for 2 seconds then restore
                 kotlinx.coroutines.delay(2000)
                 showPowerCut = false
+                viewModel.resetTransaction()
+                viewModel.refreshData()
                 navigator?.pop()
             }
         }
@@ -99,18 +102,18 @@ class VendingMachineScreen : Screen {
                             color = Color.White
                         )
                     },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            // Handle back navigation to return to the main menu
-                            navigator?.pop()
-                        }) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = Color.White
-                            )
-                        }
-                    },
+//                    navigationIcon = {
+//                        IconButton(onClick = {
+//                            // Handle back navigation to return to the main menu
+//                            navigator?.pop()
+//                        }) {
+//                            Icon(
+//                                Icons.AutoMirrored.Filled.ArrowBack,
+//                                contentDescription = "Back",
+//                                tint = Color.White
+//                            )
+//                        }
+//                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = VendingMachineColors.MachinePanelColor
                     )
@@ -150,7 +153,7 @@ class VendingMachineScreen : Screen {
         innerPadding: androidx.compose.foundation.layout.PaddingValues,
         showPowerCut: () -> Unit
     ) {
-        // Handle the change not available dialog
+        // Handle the NO CHANGE AVAILABLE dialog
         ChangeNotAvailableDialog(
             show = viewModel.showChangeNotAvailableDialog,
             onProceed = { viewModel.proceedWithoutChange() },
@@ -165,6 +168,8 @@ class VendingMachineScreen : Screen {
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Get navigator reference for handling back navigation
+            val navigator = LocalNavigator.current
             // Left panel: Coin insertion and machine info
             Column(
                 modifier = Modifier
@@ -191,9 +196,9 @@ class VendingMachineScreen : Screen {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Terminate Transaction button
-                TerminateTransactionButton(viewModel)
+                // TerminateTransactionButton(viewModel)
 
-                Spacer(modifier = Modifier.height(8.dp))
+                // Spacer(modifier = Modifier.height(8.dp))
 
                 // Return cash button
                 ReturnCashButton(
@@ -213,6 +218,22 @@ class VendingMachineScreen : Screen {
                 ) {
                     Text("SIMULATE POWER CUT", color = Color.White, fontWeight = FontWeight.Bold)
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Button to navigate to the Maintenance screen
+                MainMenuButton(
+                    text = "Maintenance",
+                    onClick = { navigator?.push(MaintenanceScreen()) }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Button to navigate to the Simulator screen
+                MainMenuButton(
+                    text = "Simulator",
+                    onClick = { navigator?.push(OverallControlScreen()) }
+                )
             }
 
             // Right panel: Drink selection and collection
@@ -254,7 +275,10 @@ class VendingMachineScreen : Screen {
         innerPadding: androidx.compose.foundation.layout.PaddingValues,
         showPowerCut: () -> Unit
     ) {
-        // Handle the change not available dialog
+        // Get navigator reference for handling back navigation
+        val navigator = LocalNavigator.current
+
+        // Handle the NO CHANGE AVAILABLE dialog
         ChangeNotAvailableDialog(
             show = viewModel.showChangeNotAvailableDialog,
             onProceed = { viewModel.proceedWithoutChange() },
@@ -305,9 +329,9 @@ class VendingMachineScreen : Screen {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Terminate Transaction button
-            TerminateTransactionButton(viewModel)
+            // TerminateTransactionButton(viewModel)
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // Spacer(modifier = Modifier.height(8.dp))
 
             // Return cash button
             ReturnCashButton(
@@ -336,6 +360,23 @@ class VendingMachineScreen : Screen {
             ) {
                 Text("SIMULATE POWER CUT", color = Color.White, fontWeight = FontWeight.Bold)
             }
+
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Button to navigate to the Maintenance screen
+            MainMenuButton(
+                text = "Maintenance",
+                onClick = { navigator?.push(MaintenanceScreen()) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Button to navigate to the Simulator screen
+            MainMenuButton(
+                text = "Simulator",
+                onClick = { navigator?.push(OverallControlScreen()) }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -647,7 +688,7 @@ class VendingMachineScreen : Screen {
     ) {
         // Change collection slot
         Text(
-            "COLLECT CHANGE / RETURNED CASH HERE (Click to collect)",
+            "COLLECT CHANGE / RETURNED CASH HERE ",
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
@@ -688,7 +729,7 @@ class VendingMachineScreen : Screen {
 
         // Product collection slot
         Text(
-            "COLLECT CAN HERE (Click to collect)",
+            "COLLECT CAN HERE ",
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
@@ -762,7 +803,7 @@ class VendingMachineScreen : Screen {
                 onDismissRequest = onDismiss,
                 title = {
                     Text(
-                        "Change Not Available",
+                        "NO CHANGE AVAILABLE",
                         fontWeight = FontWeight.Bold,
                         color = VendingMachineColors.AccentColor
                     )

@@ -355,7 +355,7 @@ class OverallControlScreen : Screen {
     ) {
         // BEGIN SIMULATION button
         ControlButton(
-            text = "BEGIN SIMULATION PRESS",
+            text = "BEGIN SIMULATION",
             enabled = !viewModel.isRunning && beginClickable,
             onClick = {
                 if (beginClickable) {
@@ -375,7 +375,7 @@ class OverallControlScreen : Screen {
 
         // END SIMULATION button
         ControlButton(
-            text = "END SIMULATION PRESS",
+            text = "END SIMULATION",
             enabled = viewModel.isRunning && endClickable,
             onClick = {
                 if (endClickable) {
@@ -403,21 +403,21 @@ class OverallControlScreen : Screen {
     ) {
         // ACTIVATE CUSTOMER PANEL button
         ControlButton(
-            text = "ACTIVATED CUSTOMER PANEL PRESS",
+            text = "ACTIVATED CUSTOMER PANEL",
             enabled = viewModel.isRunning,
             onClick = onCustomerPanelClick
         )
 
         // ACTIVATE MAINTAINER PANEL button
         ControlButton(
-            text = "ACTIVATED MAINTAINER PANEL PRESS",
+            text = "ACTIVATED MAINTAINER PANEL",
             enabled = viewModel.isRunning,
             onClick = onMaintainerPanelClick
         )
 
         // ACTIVATE MACHINERY SIMULATOR PANEL button
         ControlButton(
-            text = "ACTIVATED MACHINERY SIMULATOR PANEL PRESS",
+            text = "ACTIVATED MACHINERY SIMULATOR PANEL",
             enabled = viewModel.isRunning,
             onClick = onMachineryPanelClick
         )
@@ -447,7 +447,7 @@ class OverallControlScreen : Screen {
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         StatusText(text = "Time: $currentTime")
-                        StatusText(text = "Door: ${if (viewModel.doorLocked) "Locked" else "Unlocked"}")
+                        //StatusText(text = "Door: ${if (viewModel.doorLocked) "Locked" else "Unlocked"}")
                         StatusText(text = "Cash: RM${formatTwoDecimalPlaces(viewModel.getTotalCoinValue())}")
                         StatusText(text = "Cans: ${viewModel.getTotalCans()}")
                     }
@@ -458,7 +458,7 @@ class OverallControlScreen : Screen {
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
                         StatusText(text = currentTime)
-                        StatusText(text = "Door: ${if (viewModel.doorLocked) "Locked" else "Unlocked"}")
+                        //StatusText(text = "Door: ${if (viewModel.doorLocked) "Locked" else "Unlocked"}")
                         StatusText(text = "Cash: RM${formatTwoDecimalPlaces(viewModel.getTotalCoinValue())}")
                         StatusText(text = "Cans: ${viewModel.getTotalCans()}")
                     }

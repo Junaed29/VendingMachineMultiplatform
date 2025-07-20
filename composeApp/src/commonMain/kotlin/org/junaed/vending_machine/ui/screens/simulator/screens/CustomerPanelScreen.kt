@@ -89,14 +89,14 @@ fun CustomerPanelScreen(
 ) {
     // Determine if we're on mobile or desktop
     val windowSize = rememberWindowSize()
-    val isDesktop = windowSize == WindowSize.EXPANDED
+    val isDesktop = false
 
     // Power cut simulation state
     var showPowerCut by remember { mutableStateOf(false) }
 
     // Simulation state variables
     var totalInserted by remember { mutableStateOf("0.00") }
-    var uiMessage by remember { mutableStateOf("Welcome to DrinkBot! Insert coins to start.") }
+    var uiMessage by remember { mutableStateOf("Welcome to DrinkBot! Select a drink and insert coins.") }
     var isTransactionActive by remember { mutableStateOf(false) }
     var selectedDrink by remember { mutableStateOf<DrinkItem?>(null) }
     var showNoChangeMessage by remember { mutableStateOf(false) }
@@ -108,11 +108,11 @@ fun CustomerPanelScreen(
     // Dummy drinks data for simulation
     val availableDrinks = remember {
         listOf(
-            DrinkItem("Coca Cola", "2.50", 10),
-            DrinkItem("Sprite", "2.50", 8),
-            DrinkItem("Fanta", "2.50", 5),
-            DrinkItem("Mountain Dew", "2.80", 3),
-            DrinkItem("Dr Pepper", "3.20", 2)
+            DrinkItem("BRAND 1", "2.50", 10),
+            DrinkItem("BRAND 2", "2.50", 8),
+            DrinkItem("BRAND 3", "2.50", 5),
+            DrinkItem("BRAND 4", "2.80", 3),
+            DrinkItem("BRAND 5", "2.50", 0) // NOT IN STOCK example
         )
     }
 
@@ -258,14 +258,23 @@ fun CustomerPanelScreen(
                                     totalInserted = formatCurrency(currentValue + coinValue)
                                     insertedCoins.value = insertedCoins.value + coin
                                     isTransactionActive = true
-                                    uiMessage = "Coin accepted. Please select a drink."
+
+                                    // Update message based on whether a drink is selected
+                                    uiMessage = if (selectedDrink != null) {
+                                        "Coin accepted. Selected: ${selectedDrink?.name} - RM ${selectedDrink?.price}"
+                                    } else {
+                                        "Coin accepted. Please select a drink."
+                                    }
                                 }
                             }
                         },
                         onSelectDrink = { drink ->
-                            if (isTransactionActive || selectedDrink == drink) {
-                                selectedDrink = drink
-                                uiMessage = "Selected: ${drink.name} - RM ${drink.price}"
+                            // Allow selecting a drink whether or not coins have been inserted
+                            selectedDrink = drink
+                            uiMessage = if (totalInserted.toDoubleOrNull() ?: 0.0 > 0.0) {
+                                "Selected: ${drink.name} - RM ${drink.price}. Insert more coins if needed."
+                            } else {
+                                "Selected: ${drink.name} - RM ${drink.price}. Please insert coins."
                             }
                         },
                         onPurchase = {
@@ -385,14 +394,23 @@ fun CustomerPanelScreen(
                                     totalInserted = formatCurrency(currentValue + coinValue)
                                     insertedCoins.value = insertedCoins.value + coin
                                     isTransactionActive = true
-                                    uiMessage = "Coin accepted. Please select a drink."
+
+                                    // Update message based on whether a drink is selected
+                                    uiMessage = if (selectedDrink != null) {
+                                        "Coin accepted. Selected: ${selectedDrink?.name} - RM ${selectedDrink?.price}"
+                                    } else {
+                                        "Coin accepted. Please select a drink."
+                                    }
                                 }
                             }
                         },
                         onSelectDrink = { drink ->
-                            if (isTransactionActive || selectedDrink == drink) {
-                                selectedDrink = drink
-                                uiMessage = "Selected: ${drink.name} - RM ${drink.price}"
+                            // Allow selecting a drink whether or not coins have been inserted
+                            selectedDrink = drink
+                            uiMessage = if (totalInserted.toDoubleOrNull() ?: 0.0 > 0.0) {
+                                "Selected: ${drink.name} - RM ${drink.price}. Insert more coins if needed."
+                            } else {
+                                "Selected: ${drink.name} - RM ${drink.price}. Please insert coins."
                             }
                         },
                         onPurchase = {
@@ -486,7 +504,7 @@ fun CustomerPanelScreen(
             PowerCutOverlay(isVisible = showPowerCut)
         }
 
-        // Handle the change not available dialog
+        // Handle the NO CHANGE AVAILABLE dialog
         ChangeNotAvailableDialog(
             show = showChangeNotAvailableDialog,
             onProceed = {
@@ -522,6 +540,15 @@ data class DrinkItem(
     val price: String,
     val stock: Int
 )
+
+// Extension function to convert simulator's DrinkItem to model's DrinkItem
+private fun DrinkItem.toModelDrinkItem(): org.junaed.vending_machine.model.DrinkItem {
+    return org.junaed.vending_machine.model.DrinkItem(
+        name = this.name,
+        price = this.price,
+        inStock = this.stock > 0
+    )
+}
 
 @Composable
 private fun DesktopLayout(
@@ -1045,8 +1072,10 @@ private fun DrinkSelectionSection(
                 val isSelected = selectedDrink?.name == drink.name
                 val isSelectable = !isActive || isSelected
 
-                DrinkSelectionButton(
-                    drinkItem = drink,
+                // Convert simulator DrinkItem to model DrinkItem and use the shared component
+                val modelDrinkItem = drink.toModelDrinkItem()
+                org.junaed.vending_machine.ui.components.DrinkSelectionButton(
+                    drinkItem = modelDrinkItem,
                     onClick = { onSelectDrink(drink) },
                     isSelected = isSelected,
                     isSelectable = isSelectable
@@ -1110,7 +1139,7 @@ private fun CollectionSlotsSection(
 ) {
     // Change collection slot
     Text(
-        "COLLECT CHANGE / RETURNED CASH HERE (Click to collect)",
+        "COLLECT CHANGE / RETURNED CASH HERE ",
         fontWeight = FontWeight.Bold,
         color = Color.White
     )
@@ -1151,7 +1180,7 @@ private fun CollectionSlotsSection(
 
     // Product collection slot
     Text(
-        "COLLECT CAN HERE (Click to collect)",
+        "COLLECT CAN HERE ",
         fontWeight = FontWeight.Bold,
         color = Color.White
     )
@@ -1225,7 +1254,7 @@ private fun ChangeNotAvailableDialog(
             onDismissRequest = onDismiss,
             title = {
                 Text(
-                    "Change Not Available",
+                    "NO CHANGE AVAILABLE",
                     fontWeight = FontWeight.Bold,
                     color = VendingMachineColors.AccentColor
                 )
@@ -1330,17 +1359,37 @@ private fun DrinkSelectionButton(
     isSelected: Boolean,
     isSelectable: Boolean
 ) {
+    // Determine if the drink is in stock (in this simulation, we assume all drinks with stock > 0 are in stock)
+    val inStock = drinkItem.stock > 0
+    val isEnabled = inStock && isSelectable
+
+    // Change background color if selected (matching the shared component's logic)
+    val backgroundColor = when {
+        isSelected -> Color(0xFF2C4B8E) // Highlighted blue when selected
+        inStock -> VendingMachineColors.MachinePanelColor
+        else -> Color(0xFF0A1622) // Darker color for NOT IN STOCK
+    }
+
+    // Change border color based on selection and availability
+    val borderColor = when {
+        isSelected -> VendingMachineColors.AccentColor
+        inStock -> Color.DarkGray
+        else -> Color.Gray.copy(alpha = 0.5f)
+    }
+
+    // Text color based on selection
+    val textColor = if (isSelected) Color.White else Color.White.copy(alpha = if (inStock) 1f else 0.6f)
+
     Card(
-        onClick = { if (isSelectable) onClick() },
-        enabled = isSelectable,
+        onClick = { if (isEnabled) onClick() },
+        enabled = isEnabled,
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) VendingMachineColors.DisplayColor
-                            else VendingMachineColors.MachinePanelColor
+            containerColor = backgroundColor
         ),
         border = BorderStroke(
             width = if (isSelected) 3.dp else 1.dp,
-            color = if (isSelected) VendingMachineColors.AccentColor else Color.DarkGray
+            color = borderColor
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -1357,20 +1406,20 @@ private fun DrinkSelectionButton(
                 Text(
                     drinkItem.name,
                     fontWeight = FontWeight.Bold,
-                    color = if (isSelected) VendingMachineColors.MachinePanelColor else Color.White
+                    color = textColor
                 )
 
                 Text(
-                    "Stock: ${drinkItem.stock}",
-                    color = if (isSelected) VendingMachineColors.MachinePanelColor.copy(alpha = 0.7f)
-                            else Color.White.copy(alpha = 0.7f)
+                    text = if (inStock) "Stock: ${drinkItem.stock}" else "NOT IN STOCK",
+                    color = if (isSelected) Color.White.copy(alpha = 0.7f) else
+                           if (inStock) Color.White.copy(alpha = 0.7f) else Color.Red.copy(alpha = 0.7f)
                 )
             }
 
             Text(
                 "RM ${drinkItem.price}",
                 fontWeight = FontWeight.Bold,
-                color = if (isSelected) VendingMachineColors.MachinePanelColor else Color.White
+                color = textColor
             )
         }
     }

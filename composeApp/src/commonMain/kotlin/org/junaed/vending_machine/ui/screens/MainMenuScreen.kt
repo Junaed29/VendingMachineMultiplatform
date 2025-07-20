@@ -145,23 +145,7 @@ class MainMenuScreen: Screen {
         }
     }
 
-    @Composable
-    private fun MainMenuButton(text: String, onClick: () -> Unit) {
-        Button(
-            onClick = onClick,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = VendingMachineColors.ButtonColor
-            )
-        ) {
-            Text(
-                text,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-    }
+
 
     /**
      * DownloadSection - Displays download buttons for different platforms
@@ -278,5 +262,23 @@ class MainMenuScreen: Screen {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun MainMenuButton(text: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = VendingMachineColors.ButtonColor
+        )
+    ) {
+        Text(
+            text,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
     }
 }

@@ -410,7 +410,7 @@ class MaintenanceScreen : Screen {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "ENTER PASSWORD",
+                    "TYPE PASSWORD HERE",
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
                     color = Color.Black,
@@ -770,7 +770,7 @@ class MaintenanceScreen : Screen {
 
         SectionCard(title = "Coin Count") {
             Text(
-                "Select a coin denomination to view count",
+                "PRESS BELOW TO DETERMINE NUMBER OF COINS IN SELECTED DENOMINATION",
                 fontSize = 14.sp,
                 color = Color.White,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -1007,7 +1007,7 @@ class MaintenanceScreen : Screen {
 
         SectionCard(title = "Drink Inventory & Price Management") {
             Text(
-                "Select a drink brand to manage inventory and pricing",
+                "PRESS BELOW TO DETERMINE NUMBER OF CANS IN SELECTED DENOMINATION",
                 fontSize = 14.sp,
                 color = Color.White,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -1036,7 +1036,7 @@ class MaintenanceScreen : Screen {
 
             // Label for the can count display
             Text(
-                "TOTAL NUMBER OF CANS IN SELECTED BRAND",
+                "TOTAL NUMBER OF CANS IN SELECTED DENOMINATION",
                 fontSize = 14.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
@@ -1129,7 +1129,7 @@ class MaintenanceScreen : Screen {
                         newPrice = input
                     }
                 },
-                label = { Text("New Price (RM)", color = Color.White) },
+                label = { Text("TYPE NEW DRINKS PRICE HERE", color = Color.White) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1400,7 +1400,7 @@ class MaintenanceScreen : Screen {
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
-                    "TRANSFER CASH TO DISPENSER",
+                    "PRESS HERE TO COLLECT ALL CASH",
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp

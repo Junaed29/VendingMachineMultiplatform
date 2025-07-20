@@ -96,7 +96,7 @@ fun MachinerySimulationScreen(
                     TopAppBar(
                         title = {
                             Text(
-                                "Machinery Simulation",
+                                "MACHINERY SIMULATION",
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold
                             )
@@ -120,7 +120,7 @@ fun MachinerySimulationScreen(
 
                     // Coin Float Section
                     Text(
-                        "Coin Float (0-20 each)",
+                        "DISPLAY/ENTER NEW VALUE (Coin)",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -187,7 +187,7 @@ fun MachinerySimulationScreen(
 
                     // Drink Stock Section
                     Text(
-                        "Drink Stock (0-20 each)",
+                        "DISPLAY/ENTER NEW VALUE (Drink)",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -202,7 +202,7 @@ fun MachinerySimulationScreen(
                     ) {
                         // Create a numeric field for each brand
                         NumericField(
-                            label = "Coke",
+                            label = "BRAND 1",
                             initialValue = viewModel.canCounts[Brand.COKE] ?: 0,
                             onValidChange = { newValue ->
                                 viewModel.updateCanCount(Brand.COKE, newValue)
@@ -214,7 +214,7 @@ fun MachinerySimulationScreen(
                         )
 
                         NumericField(
-                            label = "Sprite",
+                            label = "BRAND 2",
                             initialValue = viewModel.canCounts[Brand.SPRITE] ?: 0,
                             onValidChange = { newValue ->
                                 viewModel.updateCanCount(Brand.SPRITE, newValue)
@@ -233,7 +233,7 @@ fun MachinerySimulationScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         NumericField(
-                            label = "DrinkBot",
+                            label = "BRAND 3",
                             initialValue = viewModel.canCounts[Brand.DRINKBOT] ?: 0,
                             onValidChange = { newValue ->
                                 viewModel.updateCanCount(Brand.DRINKBOT, newValue)
@@ -245,7 +245,7 @@ fun MachinerySimulationScreen(
                         )
 
                         NumericField(
-                            label = "Pepsi",
+                            label = "BRAND 4",
                             initialValue = viewModel.canCounts[Brand.PEPSI] ?: 0,
                             onValidChange = { newValue ->
                                 viewModel.updateCanCount(Brand.PEPSI, newValue)
@@ -257,7 +257,7 @@ fun MachinerySimulationScreen(
                         )
 
                         NumericField(
-                            label = "Fanta",
+                            label = "BRAND 5",
                             initialValue = viewModel.canCounts[Brand.FANTA] ?: 0,
                             onValidChange = { newValue ->
                                 viewModel.updateCanCount(Brand.FANTA, newValue)
