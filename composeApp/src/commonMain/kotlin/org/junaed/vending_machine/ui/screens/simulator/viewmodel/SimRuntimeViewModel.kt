@@ -199,7 +199,7 @@ class SimRuntimeViewModel {
     /**
      * Add event to the log with timestamp
      */
-    private fun logEvent(message: String) {
+    fun logEvent(message: String) {
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val timeString = "${now.hour}:${now.minute}:${now.second}"
         _eventLog.add("[$timeString] $message")
