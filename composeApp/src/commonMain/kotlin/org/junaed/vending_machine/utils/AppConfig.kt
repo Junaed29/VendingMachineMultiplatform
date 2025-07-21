@@ -9,7 +9,7 @@ object AppConfig {
     const val GITHUB_REPO_NAME = "VendingMachineMultiplatform"
 
     // Current release version - update this when creating a new release
-    const val CURRENT_RELEASE_TAG = "v1.0.7"
+    const val CURRENT_RELEASE_TAG = "v1.0.8"
 
     // Base URL for GitHub repository
     const val GITHUB_REPO_BASE_URL = "https://github.com/$GITHUB_REPO_OWNER/$GITHUB_REPO_NAME"

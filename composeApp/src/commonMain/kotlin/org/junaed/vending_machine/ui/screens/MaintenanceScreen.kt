@@ -793,13 +793,13 @@ class MaintenanceScreen : Screen {
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             CoinRadioButton(
-                                text = "10C",
+                                text = "10c",
                                 selected = selectedDenomination == 10,
                                 onClick = { selectedDenomination = 10 }
                             )
 
                             CoinRadioButton(
-                                text = "20C",
+                                text = "20c",
                                 selected = selectedDenomination == 20,
                                 onClick = { selectedDenomination = 20 }
                             )
@@ -810,7 +810,7 @@ class MaintenanceScreen : Screen {
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             CoinRadioButton(
-                                text = "50C",
+                                text = "50c",
                                 selected = selectedDenomination == 50,
                                 onClick = { selectedDenomination = 50 }
                             )
@@ -832,21 +832,21 @@ class MaintenanceScreen : Screen {
                     ) {
                         // 10 Sen radio button
                         CoinRadioButton(
-                            text = "10C",
+                            text = "10c",
                             selected = selectedDenomination == 10,
                             onClick = { selectedDenomination = 10 }
                         )
 
                         // 20 Sen radio button
                         CoinRadioButton(
-                            text = "20C",
+                            text = "20c",
                             selected = selectedDenomination == 20,
                             onClick = { selectedDenomination = 20 }
                         )
 
                         // 50 Sen radio button
                         CoinRadioButton(
-                            text = "50C",
+                            text = "50c",
                             selected = selectedDenomination == 50,
                             onClick = { selectedDenomination = 50 }
                         )

@@ -16,7 +16,7 @@ class CoinRepository {
         // Malaysian coins with accurate physical measurements
         val MALAYSIAN_10_SEN = Coin(
             valueSen = 10,
-            displayName = "10 sen",
+            displayName = "10c",
             diameter = 18.5,
             thickness = 1.6,
             weight = 2.98,
@@ -25,7 +25,7 @@ class CoinRepository {
 
         val MALAYSIAN_20_SEN = Coin(
             valueSen = 20,
-            displayName = "20 sen",
+            displayName = "20c",
             diameter = 20.0,
             thickness = 1.75,
             weight = 4.18,
@@ -34,7 +34,7 @@ class CoinRepository {
 
         val MALAYSIAN_50_SEN = Coin(
             valueSen = 50,
-            displayName = "50 sen",
+            displayName = "50c",
             diameter = 24.0,
             thickness = 1.8,
             weight = 5.66,
