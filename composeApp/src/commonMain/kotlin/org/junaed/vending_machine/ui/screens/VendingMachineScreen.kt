@@ -196,14 +196,12 @@ class VendingMachineScreen : Screen {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Terminate Transaction button
-                // TerminateTransactionButton(viewModel)
+                TerminateTransactionButton(viewModel)
 
                 // Spacer(modifier = Modifier.height(8.dp))
 
                 // Return cash button
-                ReturnCashButton(
-                    onReturnCash = { viewModel.returnCash() }
-                )
+                // ReturnCashButton( onReturnCash = { viewModel.returnCash() })
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -329,14 +327,12 @@ class VendingMachineScreen : Screen {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Terminate Transaction button
-            // TerminateTransactionButton(viewModel)
+             TerminateTransactionButton(viewModel)
 
             // Spacer(modifier = Modifier.height(8.dp))
 
             // Return cash button
-            ReturnCashButton(
-                onReturnCash = { viewModel.returnCash() }
-            )
+            //ReturnCashButton(onReturnCash = { viewModel.returnCash() })
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -667,6 +663,14 @@ class VendingMachineScreen : Screen {
     private fun TerminateTransactionButton(viewModel: VendingMachineViewModel) {
         // Only show the terminate button when a transaction is active
         if (viewModel.isTransactionActive) {
+            Text(
+                "PRESS HERE TO RETURN CASH AND TERMINATE TRANSACTION HERE",
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = Color.White,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Button(
                 onClick = { viewModel.terminateTransaction() },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
